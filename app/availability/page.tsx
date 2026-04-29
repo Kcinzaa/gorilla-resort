@@ -16,7 +16,6 @@ import {
   RefreshCcw,
   SearchCheck,
   ShieldCheck,
-  Sparkles,
   Users,
   Wallet,
   XCircle,
@@ -46,8 +45,8 @@ function formatCurrency(amount: number) {
 function calculateNights(checkIn: string, checkOut: string) {
   if (!checkIn || !checkOut) return 0;
 
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
+  const start = new Date(`${checkIn}T00:00:00`);
+  const end = new Date(`${checkOut}T00:00:00`);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return 0;
@@ -73,15 +72,15 @@ export default function AvailabilityPage() {
   }, [checkIn, checkOut]);
 
   const availableRooms = useMemo(() => {
-    return rooms.filter((room) => room.isAvailable);
+    return rooms.filter((room) => room.isAvailable && room.availableRooms > 0);
   }, [rooms]);
 
   const unavailableRooms = useMemo(() => {
-    return rooms.filter((room) => !room.isAvailable);
+    return rooms.filter((room) => !room.isAvailable || room.availableRooms <= 0);
   }, [rooms]);
 
   const totalAvailableRoomCount = useMemo(() => {
-    return rooms.reduce((sum, room) => sum + room.availableRooms, 0);
+    return rooms.reduce((sum, room) => sum + Number(room.availableRooms || 0), 0);
   }, [rooms]);
 
   async function handleSearch(event?: React.FormEvent<HTMLFormElement>) {
@@ -117,18 +116,36 @@ export default function AvailabilityPage() {
         }
       );
 
-      const result = await response.json();
+      const contentType = response.headers.get("content-type") || "";
 
-      if (!response.ok) {
-        setError(result.message || "ไม่สามารถตรวจสอบห้องว่างได้");
+      if (!contentType.includes("application/json")) {
+        setError("API ไม่ได้ส่งข้อมูล JSON กลับมา");
+        setRooms([]);
+        setSearched(true);
         return;
       }
 
-      setRooms(result.data || []);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setError(result.message || "ไม่สามารถตรวจสอบห้องว่างได้");
+        setRooms([]);
+        setSearched(true);
+        return;
+      }
+
+      const allRooms: AvailabilityRoom[] = Array.isArray(result.data)
+        ? result.data
+        : [];
+
+      setRooms(allRooms);
+      setError("");
       setSearched(true);
     } catch (err) {
       console.error(err);
       setError("เกิดข้อผิดพลาดในการตรวจสอบห้องว่าง");
+      setRooms([]);
+      setSearched(true);
     } finally {
       setLoading(false);
     }
@@ -252,6 +269,7 @@ export default function AvailabilityPage() {
                 <input
                   type="date"
                   value={checkOut}
+                  min={checkIn || undefined}
                   onChange={(event) => {
                     setCheckOut(event.target.value);
                     resetResult();
@@ -368,7 +386,7 @@ export default function AvailabilityPage() {
           </section>
         )}
 
-        {searched && !loading && rooms.length === 0 && (
+        {searched && !loading && !error && rooms.length === 0 && (
           <section className="mt-5 flex min-h-[420px] flex-col items-center justify-center rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem]">
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
               <Hotel size={38} />
@@ -384,7 +402,7 @@ export default function AvailabilityPage() {
           </section>
         )}
 
-        {searched && !loading && rooms.length > 0 && (
+        {searched && !loading && !error && rooms.length > 0 && (
           <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_320px]">
             <div className="grid gap-5 md:grid-cols-2">
               {availableRooms.map((room) => (
@@ -488,16 +506,17 @@ export default function AvailabilityPage() {
               ))}
 
               {availableRooms.length === 0 && (
-                <div className="md:col-span-2 flex min-h-[360px] flex-col items-center justify-center rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem]">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-red-50 text-red-500">
+                <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] md:col-span-2">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50 text-amber-500">
                     <XCircle size={38} />
                   </div>
 
                   <h2 className="mt-5 text-2xl font-black text-slate-950">
-                    ห้องพักเต็มในช่วงวันที่เลือก
+                    ไม่มีห้องว่างในช่วงวันที่นี้
                   </h2>
 
                   <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    ห้องพักทุกประเภทเต็มในช่วงวันที่ที่เลือก
                     กรุณาลองเปลี่ยนวันที่เข้าพักหรือวันที่ออกใหม่อีกครั้ง
                   </p>
                 </div>
@@ -548,11 +567,11 @@ export default function AvailabilityPage() {
               </div>
 
               {unavailableRooms.length > 0 && (
-                <div className="mt-5 rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
-                  <p className="font-black text-red-700">
+                <div className="mt-5 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100">
+                  <p className="font-black text-amber-700">
                     ห้องเต็ม {unavailableRooms.length} ประเภท
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-red-600">
+                  <p className="mt-1 text-sm leading-6 text-amber-600">
                     มีบางประเภทห้องที่เต็มในช่วงวันที่คุณเลือก
                   </p>
                 </div>
