@@ -1,41 +1,64 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function parseDate(value: string | null) {
-  if (!value) return null;
+type AvailabilityRoom = {
+  id: number;
+  name: string;
+  description: string | null;
+  pricePerNight: number;
+  capacity: number;
+  totalRooms: number | null;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-  const date = new Date(value);
+type ConfirmedBooking = {
+  id: number;
+  roomTypeId: number;
+  checkIn: Date;
+  checkOut: Date;
+  status: string;
+};
 
-  if (Number.isNaN(date.getTime())) {
-    return null;
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
   }
 
-  return date;
+  return String(error);
+}
+
+function isValidDate(date: Date) {
+  return !Number.isNaN(date.getTime());
 }
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const roomTypeId = Number(searchParams.get("roomTypeId"));
-    const checkIn = parseDate(searchParams.get("checkIn"));
-    const checkOut = parseDate(searchParams.get("checkOut"));
+    const checkInParam = searchParams.get("checkIn") || "";
+    const checkOutParam = searchParams.get("checkOut") || "";
 
-    if (!roomTypeId) {
+    if (!checkInParam || !checkOutParam) {
       return NextResponse.json(
         {
           success: false,
-          message: "ไม่พบรหัสประเภทห้องพัก",
+          message: "กรุณาระบุวันที่เข้าพักและวันที่ออก",
         },
         { status: 400 }
       );
     }
 
-    if (!checkIn || !checkOut) {
+    const checkIn = new Date(checkInParam);
+    const checkOut = new Date(checkOutParam);
+
+    if (!isValidDate(checkIn) || !isValidDate(checkOut)) {
       return NextResponse.json(
         {
           success: false,
-          message: "กรุณาระบุวันที่เข้าพักและวันที่ออก",
+          message: "รูปแบบวันที่ไม่ถูกต้อง",
         },
         { status: 400 }
       );
@@ -51,52 +74,67 @@ export async function GET(request: Request) {
       );
     }
 
-    const roomType = await prisma.roomType.findFirst({
+    const rooms: AvailabilityRoom[] = await prisma.roomType.findMany({
       where: {
-        id: roomTypeId,
         isActive: true,
       },
-    });
-
-    if (!roomType) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "ไม่พบห้องพัก หรือห้องพักนี้ไม่ได้เปิดให้จอง",
-        },
-        { status: 404 }
-      );
-    }
-
-    const overlappingBookings = await prisma.booking.count({
-      where: {
-        roomTypeId,
-        status: {
-          in: ["PENDING", "CONFIRMED"],
-        },
-        checkIn: {
-          lt: checkOut,
-        },
-        checkOut: {
-          gt: checkIn,
-        },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    const totalRooms = roomType.totalRooms ?? 1;
-    const availableRooms = Math.max(totalRooms - overlappingBookings, 0);
+    const confirmedBookings: ConfirmedBooking[] =
+      await prisma.booking.findMany({
+        where: {
+          status: "CONFIRMED",
+
+          // เงื่อนไขวันที่ทับซ้อน:
+          // booking.checkIn < search.checkOut
+          // booking.checkOut > search.checkIn
+          checkIn: {
+            lt: checkOut,
+          },
+          checkOut: {
+            gt: checkIn,
+          },
+        },
+        select: {
+          id: true,
+          roomTypeId: true,
+          checkIn: true,
+          checkOut: true,
+          status: true,
+        },
+      });
+
+    const bookedCountByRoomType = confirmedBookings.reduce<
+      Record<number, number>
+    >((acc, booking) => {
+      acc[booking.roomTypeId] = (acc[booking.roomTypeId] || 0) + 1;
+      return acc;
+    }, {});
+
+    const data = rooms.map((room) => {
+      const bookedRooms = bookedCountByRoomType[room.id] || 0;
+      const totalRooms = room.totalRooms || 0;
+      const availableRooms = Math.max(totalRooms - bookedRooms, 0);
+
+      return {
+        ...room,
+        bookedRooms,
+        availableRooms,
+        isAvailable: availableRooms > 0,
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: {
-        roomTypeId: roomType.id,
-        roomName: roomType.name,
-        totalRooms,
-        bookedRooms: overlappingBookings,
-        availableRooms,
-        isAvailable: availableRooms > 0,
-        checkIn,
-        checkOut,
+      data,
+      summary: {
+        checkIn: checkInParam,
+        checkOut: checkOutParam,
+        totalRoomTypes: rooms.length,
+        totalConfirmedBookings: confirmedBookings.length,
       },
     });
   } catch (error) {
@@ -106,6 +144,10 @@ export async function GET(request: Request) {
       {
         success: false,
         message: "ไม่สามารถตรวจสอบห้องว่างได้",
+        error:
+          process.env.NODE_ENV === "development"
+            ? getErrorMessage(error)
+            : undefined,
       },
       { status: 500 }
     );

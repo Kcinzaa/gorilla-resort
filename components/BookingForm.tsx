@@ -246,7 +246,21 @@ export default function BookingForm({
         return;
       }
 
-      router.push(`/booking/success?bookingCode=${result.data.bookingCode}`);
+      const booking = result.data;
+
+const successParams = new URLSearchParams({
+  bookingCode: booking.bookingCode || "",
+  roomName: booking?.roomType?.name || "",
+  checkIn: booking.checkIn || checkIn,
+  checkOut: booking.checkOut || checkOut,
+  guests: String(booking.guests || guests || ""),
+  totalPrice: String(booking.totalPrice || totalPrice || ""),
+  depositAmount: String(booking.depositAmount || depositAmount || ""),
+  paymentStatus: booking.paymentStatus || "PENDING",
+  status: booking.status || "PENDING",
+});
+
+router.push(`/booking/success?${successParams.toString()}`);
       router.refresh();
     } catch (err) {
       console.error(err);

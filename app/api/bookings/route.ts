@@ -309,6 +309,7 @@ export async function POST(request: Request) {
         checkOut,
         guests,
         totalPrice,
+        
         status: "PENDING",
 
         depositAmount,
