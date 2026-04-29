@@ -34,6 +34,14 @@ function isValidDate(date: Date) {
   return !Number.isNaN(date.getTime());
 }
 
+function normalizeDateStart(dateText: string) {
+  return new Date(`${dateText}T00:00:00.000`);
+}
+
+function normalizeDateEnd(dateText: string) {
+  return new Date(`${dateText}T00:00:00.000`);
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -51,8 +59,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const checkIn = new Date(checkInParam);
-    const checkOut = new Date(checkOutParam);
+    const checkIn = normalizeDateStart(checkInParam);
+    const checkOut = normalizeDateEnd(checkOutParam);
 
     if (!isValidDate(checkIn) || !isValidDate(checkOut)) {
       return NextResponse.json(
@@ -83,14 +91,16 @@ export async function GET(request: Request) {
       },
     });
 
+    /*
+      สำคัญ:
+      นับเฉพาะรายการที่แอดมินยืนยันแล้วเท่านั้น
+      PENDING = ยังไม่หักห้อง
+      CANCELLED = ไม่หักห้อง
+    */
     const confirmedBookings: ConfirmedBooking[] =
       await prisma.booking.findMany({
         where: {
           status: "CONFIRMED",
-
-          // เงื่อนไขวันที่ทับซ้อน:
-          // booking.checkIn < search.checkOut
-          // booking.checkOut > search.checkIn
           checkIn: {
             lt: checkOut,
           },
@@ -109,18 +119,19 @@ export async function GET(request: Request) {
 
     const bookedCountByRoomType = confirmedBookings.reduce<
       Record<number, number>
-    >((acc, booking) => {
+    >((acc: Record<number, number>, booking: ConfirmedBooking) => {
       acc[booking.roomTypeId] = (acc[booking.roomTypeId] || 0) + 1;
       return acc;
     }, {});
 
-    const data = rooms.map((room) => {
+    const data = rooms.map((room: AvailabilityRoom) => {
+      const totalRooms = Number(room.totalRooms || 0);
       const bookedRooms = bookedCountByRoomType[room.id] || 0;
-      const totalRooms = room.totalRooms || 0;
       const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 
       return {
         ...room,
+        totalRooms,
         bookedRooms,
         availableRooms,
         isAvailable: availableRooms > 0,

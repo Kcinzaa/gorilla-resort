@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+type RoomTypeItem = {
+  id: number;
+  name: string;
+  description: string | null;
+  pricePerNight: number;
+  capacity: number;
+  totalRooms: number | null;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 function parseDate(value: string | null) {
   if (!value) return null;
 
-  const date = new Date(value);
+  const date = new Date(`${value}T00:00:00.000`);
 
   if (Number.isNaN(date.getTime())) {
     return null;
@@ -13,12 +26,23 @@ function parseDate(value: string | null) {
   return date;
 }
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
-    const checkIn = parseDate(searchParams.get("checkIn"));
-    const checkOut = parseDate(searchParams.get("checkOut"));
+    const checkInParam = searchParams.get("checkIn");
+    const checkOutParam = searchParams.get("checkOut");
+
+    const checkIn = parseDate(checkInParam);
+    const checkOut = parseDate(checkOutParam);
 
     if (!checkIn || !checkOut) {
       return NextResponse.json(
@@ -40,7 +64,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const roomTypes = await prisma.roomType.findMany({
+    const roomTypes: RoomTypeItem[] = await prisma.roomType.findMany({
       where: {
         isActive: true,
       },
@@ -50,13 +74,17 @@ export async function GET(request: Request) {
     });
 
     const results = await Promise.all(
-      roomTypes.map(async (roomType) => {
+      roomTypes.map(async (roomType: RoomTypeItem) => {
         const overlappingBookings = await prisma.booking.count({
           where: {
             roomTypeId: roomType.id,
-            status: {
-              in: ["PENDING", "CONFIRMED"],
-            },
+
+            // สำคัญ:
+            // PENDING = ยังไม่หักห้อง
+            // CONFIRMED = หักห้อง
+            // CANCELLED = ไม่หักห้อง
+            status: "CONFIRMED",
+
             checkIn: {
               lt: checkOut,
             },
@@ -66,7 +94,7 @@ export async function GET(request: Request) {
           },
         });
 
-        const totalRooms = roomType.totalRooms ?? 1;
+        const totalRooms = Number(roomType.totalRooms ?? 1);
         const availableRooms = Math.max(totalRooms - overlappingBookings, 0);
 
         return {
@@ -87,6 +115,13 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       data: results,
+      summary: {
+        checkIn: checkInParam,
+        checkOut: checkOutParam,
+        totalRoomTypes: results.length,
+        totalAvailableRoomTypes: results.filter((room) => room.isAvailable)
+          .length,
+      },
     });
   } catch (error) {
     console.error("GET ALL ROOM AVAILABILITY ERROR:", error);
@@ -95,6 +130,10 @@ export async function GET(request: Request) {
       {
         success: false,
         message: "ไม่สามารถตรวจสอบห้องว่างได้",
+        error:
+          process.env.NODE_ENV === "development"
+            ? getErrorMessage(error)
+            : undefined,
       },
       { status: 500 }
     );
