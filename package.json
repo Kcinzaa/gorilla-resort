@@ -12,6 +12,7 @@
     "@line/liff": "latest",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "dotenv": "^17.4.2",
     "lucide-react": "latest",
     "next": "latest",
     "pg": "^8.20.0",
