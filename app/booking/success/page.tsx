@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import BookingSuccessClient from "./BookingSuccessClient";
 
+export const dynamic = "force-dynamic";
+
 function LoadingSuccessPage() {
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-950">
@@ -10,9 +12,7 @@ function LoadingSuccessPage() {
           <h1 className="text-2xl font-black text-slate-950">
             กำลังโหลดข้อมูลการจอง
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            กรุณารอสักครู่...
-          </p>
+          <p className="mt-2 text-sm text-slate-500">กรุณารอสักครู่...</p>
         </div>
       </section>
     </main>
