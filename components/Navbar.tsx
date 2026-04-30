@@ -78,7 +78,7 @@ export default function Navbar({
           <Link href="/home" className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
                 <img
-                src="/images/logo.png"
+                src="/images/logo/logo.png"
                 alt="Gorilla Resort Logo"
                 className="h-full w-full object-contain"
                 />
