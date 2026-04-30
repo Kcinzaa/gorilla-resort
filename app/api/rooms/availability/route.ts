@@ -93,14 +93,16 @@ export async function GET(request: Request) {
 
     /*
       สำคัญ:
-      นับเฉพาะรายการที่แอดมินยืนยันแล้วเท่านั้น
-      PENDING = ยังไม่หักห้อง
-      CANCELLED = ไม่หักห้อง
+      PENDING = ลูกค้าส่งสลิปและจองแล้ว ต้องกันห้องไว้ก่อน
+      CONFIRMED = แอดมินยืนยันแล้ว ยังกันห้อง
+      CANCELLED = ไม่หักห้อง คืนห้องว่างทันที
     */
     const confirmedBookings: ConfirmedBooking[] =
       await prisma.booking.findMany({
         where: {
-          status: "CONFIRMED",
+          status: {
+            in: ["PENDING", "CONFIRMED"],
+          },
           checkIn: {
             lt: checkOut,
           },
@@ -145,7 +147,7 @@ export async function GET(request: Request) {
         checkIn: checkInParam,
         checkOut: checkOutParam,
         totalRoomTypes: rooms.length,
-        totalConfirmedBookings: confirmedBookings.length,
+        totalHeldBookings: confirmedBookings.length,
       },
     });
   } catch (error) {

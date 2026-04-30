@@ -80,10 +80,12 @@ export async function GET(request: Request) {
             roomTypeId: roomType.id,
 
             // สำคัญ:
-            // PENDING = ยังไม่หักห้อง
-            // CONFIRMED = หักห้อง
+            // PENDING = ลูกค้าส่งสลิปและจองแล้ว ต้องกันห้องไว้ก่อน
+            // CONFIRMED = แอดมินยืนยันแล้ว ยังกันห้อง
             // CANCELLED = ไม่หักห้อง
-            status: "CONFIRMED",
+            status: {
+              in: ["PENDING", "CONFIRMED"],
+            },
 
             checkIn: {
               lt: checkOut,

@@ -18,7 +18,6 @@ import {
   ReceiptText,
   RefreshCcw,
   SearchCheck,
-  ShieldCheck,
   UploadCloud,
   User,
   Wallet,
@@ -134,8 +133,8 @@ function getStatusInfo(status: string) {
 
   if (status === "CANCELLED") {
     return {
-      label: "ยกเลิกแล้ว",
-      description: "รายการจองนี้ถูกยกเลิก",
+      label: "ยืนยันไม่สำเร็จ",
+      description: "รีสอร์ทไม่สามารถยืนยันห้องนี้ได้ และคืนห้องว่างเข้าระบบแล้ว",
       icon: XCircle,
       badgeClass: "bg-red-50 text-red-700 ring-red-100",
       iconClass: "text-red-600",
@@ -144,8 +143,8 @@ function getStatusInfo(status: string) {
   }
 
   return {
-    label: "รอตรวจสอบ",
-    description: "รอแอดมินตรวจสอบและยืนยันรายการ",
+    label: "In process",
+    description: "ส่งคำขอจองแล้ว ระบบกันห้องไว้ให้ รอแอดมินยืนยันห้อง",
     icon: Clock3,
     badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
     iconClass: "text-amber-600",
@@ -179,8 +178,8 @@ function getPaymentStatusInfo(status?: string | null) {
 
   if (status === "PENDING") {
     return {
-      label: "รอตรวจสอบการชำระ",
-      description: "ส่งข้อมูลมัดจำแล้ว รอแอดมินตรวจสอบสลิป/เลขอ้างอิง",
+      label: "แจ้งชำระแล้ว",
+      description: "ลูกค้าแนบสลิปแล้ว",
       icon: Clock3,
       badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
       iconClass: "text-amber-600",
@@ -521,7 +520,7 @@ export default function MyBookingsPage() {
                 <p className="mt-4 text-3xl font-black text-slate-950">
                   {waitingPaymentCount}
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">รอตรวจสลิป</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">แจ้งชำระแล้ว</p>
               </div>
 
               <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
@@ -665,7 +664,7 @@ export default function MyBookingsPage() {
           !loading &&
           !error &&
           bookings.length > 0 && (
-            <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_340px]">
+            <section className="mt-5 grid gap-5">
               <div className="grid gap-5">
                 {bookings.map((booking) => {
                   const statusInfo = getStatusInfo(booking.status);
@@ -888,7 +887,7 @@ export default function MyBookingsPage() {
                                   Payment Details
                                 </p>
                                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                                  ข้อมูลการแจ้งโอนค่ามัดจำที่ส่งให้รีสอร์ทตรวจสอบ
+                                  ข้อมูลการแจ้งโอนเต็มจำนวนที่ส่งให้รีสอร์ท
                                 </p>
                               </div>
 
@@ -906,7 +905,7 @@ export default function MyBookingsPage() {
                             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                               <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
                                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  ค่ามัดจำ
+                                  ยอดชำระเต็มจำนวน
                                 </p>
                                 <p className="mt-1 font-black text-slate-950">
                                   {formatCurrency(depositAmount)}
@@ -1032,183 +1031,8 @@ export default function MyBookingsPage() {
                 })}
               </div>
 
-              <aside className="h-fit rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6 xl:sticky xl:top-28">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-950 text-white">
-                  <User size={30} className="text-white" />
-                </div>
-
-                <h2 className="mt-5 text-2xl font-black text-slate-950">
-                  โปรไฟล์การจอง
-                </h2>
-
-                {profile && (
-                  <div className="mt-5 rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400">
-                        {profile.pictureUrl ? (
-                          <img
-                            src={profile.pictureUrl}
-                            alt={profile.displayName}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <User size={24} />
-                        )}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate font-black text-slate-950">
-                          {profile.displayName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          LINE Reservation
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-5 grid gap-3">
-                  <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-amber-600">
-                          Pending
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-amber-700">
-                          {pendingCount}
-                        </p>
-                      </div>
-                      <Clock3 size={26} className="text-amber-600" />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">
-                          Confirmed
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-emerald-700">
-                          {confirmedCount}
-                        </p>
-                      </div>
-                      <CheckCircle2 size={26} className="text-emerald-600" />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-blue-50 p-4 ring-1 ring-blue-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
-                          Payment Pending
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-blue-700">
-                          {waitingPaymentCount}
-                        </p>
-                      </div>
-                      <ReceiptText size={26} className="text-blue-600" />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">
-                          Paid
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-emerald-700">
-                          {paidCount}
-                        </p>
-                      </div>
-                      <Banknote size={26} className="text-emerald-600" />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-red-600">
-                          Slip Rejected
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-red-700">
-                          {rejectedPaymentCount}
-                        </p>
-                      </div>
-                      <XCircle size={26} className="text-red-600" />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-red-600">
-                          Cancelled
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-red-700">
-                          {cancelledCount}
-                        </p>
-                      </div>
-                      <XCircle size={26} className="text-red-600" />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => profile && fetchBookings(profile.userId)}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
-                >
-                  <RefreshCcw size={18} className="text-white" />
-                  <span className="text-white">โหลดรายการใหม่</span>
-                </button>
-
-                <Link
-                  href="/availability"
-                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
-                  <SearchCheck size={18} className="text-white" />
-                  <span className="text-white">เช็คห้องว่างเพิ่ม</span>
-                </Link>
-              </aside>
             </section>
           )}
-
-        <section className="mt-5 grid gap-5 md:grid-cols-3">
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
-            <Clock3 size={30} className="text-amber-600" />
-            <h3 className="mt-5 text-xl font-black text-slate-950">
-              รอตรวจสอบ
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              รายการถูกส่งแล้ว และกำลังรอแอดมินตรวจสอบ
-            </p>
-          </div>
-
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
-            <ReceiptText size={30} className="text-blue-600" />
-            <h3 className="mt-5 text-xl font-black text-slate-950">
-              รอตรวจสลิป
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              หากแจ้งชำระมัดจำแล้ว แอดมินจะตรวจสอบหลักฐานการโอน
-            </p>
-          </div>
-
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
-            <ShieldCheck size={30} className="text-blue-600" />
-            <h3 className="mt-5 text-xl font-black text-slate-950">
-              ติดต่อรีสอร์ท
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              หากต้องการแก้ไขข้อมูล สามารถติดต่อรีสอร์ทโดยตรง
-            </p>
-          </div>
-        </section>
-
-        <footer className="mt-5 rounded-[2rem] bg-white px-6 py-5 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
-          My Reservations • Resort Booking System
-        </footer>
       </section>
 
       {selectedBooking && (

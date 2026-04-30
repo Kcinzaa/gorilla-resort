@@ -173,8 +173,8 @@ function getPaymentStatusInfo(status?: string | null) {
 
   if (status === "PENDING") {
     return {
-      label: "รอตรวจสลิป",
-      description: "ลูกค้าแจ้งชำระเงินแล้ว รอแอดมินตรวจสอบ",
+      label: "แจ้งชำระแล้ว",
+      description: "ลูกค้าแนบสลิปแล้ว ใช้ปุ่มยืนยันห้องหรือไม่ยืนยันห้อง",
       icon: Clock3,
       badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
       cardClass: "border-amber-200 bg-amber-50",
@@ -258,7 +258,6 @@ export default function AdminBookingDetailPage() {
 
   async function updateBooking(data: {
     status?: BookingStatus;
-    paymentStatus?: PaymentStatus;
   }) {
     try {
       setUpdating(true);
@@ -769,7 +768,7 @@ export default function AdminBookingDetailPage() {
                       หลักฐานการโอนเงิน
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      ตรวจสอบรูปสลิปก่อนกดยืนยันชำระเงิน
+                      ตรวจสอบรูปสลิปประกอบการตัดสินใจก่อนยืนยันห้อง
                     </p>
                   </div>
 
@@ -869,48 +868,6 @@ export default function AdminBookingDetailPage() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3">
-                <button
-                  type="button"
-                  disabled={updating || booking.paymentStatus === "PAID"}
-                  onClick={() => updateBooking({ paymentStatus: "PAID" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {updating ? (
-                    <Loader2 size={18} className="animate-spin text-white" />
-                  ) : (
-                    <CheckCircle2 size={18} className="text-white" />
-                  )}
-                  <span className="text-white">ยืนยันชำระแล้ว</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={updating || booking.paymentStatus === "REJECTED"}
-                  onClick={() => updateBooking({ paymentStatus: "REJECTED" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {updating ? (
-                    <Loader2 size={18} className="animate-spin text-white" />
-                  ) : (
-                    <XCircle size={18} className="text-white" />
-                  )}
-                  <span className="text-white">ปฏิเสธสลิป</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={updating || booking.paymentStatus === "PENDING"}
-                  onClick={() => updateBooking({ paymentStatus: "PENDING" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Clock3 size={18} className="text-slate-700" />
-                  <span className="text-slate-700">กลับไปรอตรวจสลิป</span>
-                </button>
-              </div>
-
-              <div className="my-6 h-px bg-slate-200" />
-
               <div className="grid gap-3">
                 <button
                   type="button"
@@ -937,17 +894,7 @@ export default function AdminBookingDetailPage() {
                   ) : (
                     <XCircle size={18} className="text-white" />
                   )}
-                  <span className="text-white">ยกเลิกการจอง</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={updating || booking.status === "PENDING"}
-                  onClick={() => updateBooking({ status: "PENDING" })}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Clock3 size={18} className="text-slate-700" />
-                  <span className="text-slate-700">กลับเป็นรอตรวจสอบ</span>
+                  <span className="text-white">ไม่ยืนยันห้อง</span>
                 </button>
               </div>
 

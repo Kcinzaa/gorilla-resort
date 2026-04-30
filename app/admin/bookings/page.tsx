@@ -167,8 +167,8 @@ function getPaymentStatusInfo(status?: string | null) {
 
   if (status === "PENDING") {
     return {
-      label: "รอตรวจสลิป",
-      description: "ลูกค้าแจ้งชำระเงินแล้ว รอแอดมินตรวจสอบ",
+      label: "แจ้งชำระแล้ว",
+      description: "ลูกค้าแนบสลิปแล้ว ใช้ปุ่มยืนยันห้องหรือไม่ยืนยันห้อง",
       icon: Clock3,
       badgeClass: "bg-amber-50 text-amber-700 ring-amber-100",
       iconClass: "text-amber-600",
@@ -340,48 +340,6 @@ export default function AdminBookingsPage() {
     } catch (err) {
       console.warn(err);
       setError("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
-  async function updatePaymentStatus(id: number, paymentStatus: PaymentStatus) {
-    try {
-      setUpdatingId(id);
-      setError("");
-
-      const response = await fetch("/api/admin/bookings", {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id,
-          paymentStatus,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(result.message || "ไม่สามารถอัปเดตสถานะการชำระเงินได้");
-        return;
-      }
-
-      setBookings((prev) =>
-        prev.map((booking) =>
-          booking.id === id
-            ? {
-                ...booking,
-                ...result.data,
-              }
-            : booking
-        )
-      );
-    } catch (err) {
-      console.warn(err);
-      setError("เกิดข้อผิดพลาดในการอัปเดตสถานะการชำระเงิน");
     } finally {
       setUpdatingId(null);
     }
@@ -572,7 +530,7 @@ export default function AdminBookingsPage() {
             >
               <option value="ALL">ทุกสถานะชำระเงิน</option>
               <option value="UNPAID">ยังไม่ชำระ</option>
-              <option value="PENDING">รอตรวจสลิป</option>
+              <option value="PENDING">แจ้งชำระแล้ว</option>
               <option value="PAID">ชำระแล้ว</option>
               <option value="REJECTED">ปฏิเสธสลิป</option>
             </select>
@@ -941,68 +899,6 @@ export default function AdminBookingsPage() {
 )}
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                          <button
-                            type="button"
-                            disabled={
-                              updatingId === booking.id ||
-                              booking.paymentStatus === "PAID"
-                            }
-                            onClick={() =>
-                              updatePaymentStatus(booking.id, "PAID")
-                            }
-                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {updatingId === booking.id ? (
-                              <Loader2
-                                size={18}
-                                className="animate-spin text-white"
-                              />
-                            ) : (
-                              <CheckCircle2 size={18} className="text-white" />
-                            )}
-                            <span className="text-white">ยืนยันชำระแล้ว</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={
-                              updatingId === booking.id ||
-                              booking.paymentStatus === "REJECTED"
-                            }
-                            onClick={() =>
-                              updatePaymentStatus(booking.id, "REJECTED")
-                            }
-                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {updatingId === booking.id ? (
-                              <Loader2
-                                size={18}
-                                className="animate-spin text-white"
-                              />
-                            ) : (
-                              <XCircle size={18} className="text-white" />
-                            )}
-                            <span className="text-white">ปฏิเสธสลิป</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={
-                              updatingId === booking.id ||
-                              booking.paymentStatus === "PENDING"
-                            }
-                            onClick={() =>
-                              updatePaymentStatus(booking.id, "PENDING")
-                            }
-                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <Clock3 size={18} className="text-slate-700" />
-                            <span className="text-slate-700">
-                              กลับไปรอตรวจสลิป
-                            </span>
-                          </button>
-                        </div>
                       </div>
 
                       {booking.note && (
@@ -1060,7 +956,7 @@ export default function AdminBookingsPage() {
                           ) : (
                             <XCircle size={18} className="text-white" />
                           )}
-                          <span className="text-white">ยกเลิกการจอง</span>
+                          <span className="text-white">ไม่ยืนยันห้อง</span>
                         </button>
 
                         <Link
@@ -1070,22 +966,6 @@ export default function AdminBookingsPage() {
   <span className="text-white">ดูรายละเอียด</span>
 </Link>
 
-                        <button
-                          type="button"
-                          disabled={
-                            updatingId === booking.id ||
-                            booking.status === "PENDING"
-                          }
-                          onClick={() =>
-                            updateBookingStatus(booking.id, "PENDING")
-                          }
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Clock3 size={18} className="text-slate-700" />
-                          <span className="text-slate-700">
-                            กลับเป็นรอตรวจสอบ
-                          </span>
-                        </button>
                       </div>
                     </div>
                   </div>

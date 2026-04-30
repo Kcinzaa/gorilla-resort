@@ -84,14 +84,14 @@ function calculateNights(checkIn: string, checkOut: string) {
 function getPaymentLabel(status: string) {
   if (status === "PAID") return "ชำระแล้ว";
   if (status === "REJECTED") return "สลิปไม่ผ่าน";
-  if (status === "PENDING") return "รอตรวจสลิป";
+  if (status === "PENDING") return "แจ้งชำระแล้ว";
   return "รอตรวจสอบ";
 }
 
 function getBookingLabel(status: string) {
   if (status === "CONFIRMED") return "ยืนยันแล้ว";
-  if (status === "CANCELLED") return "ยกเลิกแล้ว";
-  return "รอแอดมินยืนยัน";
+  if (status === "CANCELLED") return "ยืนยันไม่สำเร็จ";
+  return "In process";
 }
 
 export default function BookingSuccessClient() {
@@ -169,8 +169,8 @@ export default function BookingSuccessClient() {
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ระบบได้รับคำขอจองของคุณเรียบร้อยแล้ว กรุณารอแอดมินตรวจสอบข้อมูล
-                ยืนยันห้องพัก และตรวจสอบการชำระเงิน
+                ระบบได้รับคำขอจองและหลักฐานการชำระเงินแล้ว ตอนนี้อยู่ในขั้น In process
+                ระบบกันห้องไว้ให้ระหว่างรอแอดมินยืนยันห้อง
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -360,7 +360,7 @@ export default function BookingSuccessClient() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
-                        ค่ามัดจำ
+                        ยอดชำระเต็มจำนวน
                       </p>
                       <p className="mt-2 text-2xl font-black text-emerald-700">
                         {formatCurrencyFromText(info.depositAmount)}

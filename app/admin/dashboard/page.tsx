@@ -725,17 +725,29 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto rounded-[1.5rem] ring-1 ring-slate-200">
-                <table className="min-w-[980px] w-full border-collapse bg-white text-left">
+              <div className="mb-5 flex flex-wrap gap-2 text-xs font-black">
+                <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700 ring-1 ring-emerald-100">
+                  ว่าง
+                </span>
+                <span className="rounded-full bg-amber-50 px-3 py-2 text-amber-700 ring-1 ring-amber-100">
+                  มีการจอง
+                </span>
+                <span className="rounded-full bg-red-50 px-3 py-2 text-red-700 ring-1 ring-red-100">
+                  เต็ม
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+                <table className="min-w-[1120px] w-full border-separate border-spacing-0 bg-white text-left">
                   <thead>
                     <tr className="bg-slate-950 text-white">
-                      <th className="sticky left-0 z-10 min-w-56 bg-slate-950 px-4 py-4 text-sm font-black text-white">
+                      <th className="sticky left-0 z-20 min-w-64 bg-slate-950 px-5 py-4 text-sm font-black text-white">
                         ห้องพัก
                       </th>
                       {scheduleDates.map((date) => (
                         <th
                           key={date.toISOString()}
-                          className="min-w-32 border-l border-white/10 px-3 py-4 text-center text-sm font-black text-white"
+                          className="min-w-36 border-l border-slate-800 px-4 py-4 text-center text-sm font-black text-white"
                         >
                           {formatDateOnly(date)}
                         </th>
@@ -755,8 +767,8 @@ export default function AdminDashboardPage() {
                       </tr>
                     ) : (
                       occupancyRows.map(({ room, days }) => (
-                        <tr key={room.id} className="border-t border-slate-200">
-                          <td className="sticky left-0 z-10 bg-white px-4 py-4">
+                        <tr key={room.id} className="group">
+                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-white px-5 py-5 transition group-hover:bg-slate-50">
                             <p className="font-black text-slate-950">
                               {room.name}
                             </p>
@@ -772,47 +784,60 @@ export default function AdminDashboardPage() {
                             return (
                               <td
                                 key={`${room.id}-${day.date.toISOString()}`}
-                                className="border-l border-slate-200 px-3 py-3 align-top"
+                                className="border-l border-t border-slate-200 bg-slate-50/40 px-3 py-3 align-top"
                               >
                                 <div
                                   className={[
-                                    "min-h-24 rounded-2xl p-3 ring-1",
+                                    "min-h-32 rounded-[1.25rem] border p-3 shadow-sm transition",
                                     isFull
-                                      ? "bg-red-50 ring-red-100"
+                                      ? "border-red-200 bg-red-50"
                                       : hasBooking
-                                        ? "bg-amber-50 ring-amber-100"
-                                        : "bg-emerald-50 ring-emerald-100",
+                                        ? "border-amber-200 bg-amber-50"
+                                        : "border-emerald-200 bg-emerald-50",
                                   ].join(" ")}
                                 >
-                                  <p
-                                    className={[
-                                      "text-sm font-black",
-                                      isFull
-                                        ? "text-red-700"
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span
+                                      className={[
+                                        "rounded-full px-3 py-1 text-xs font-black",
+                                        isFull
+                                          ? "bg-red-100 text-red-700"
+                                          : hasBooking
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-emerald-100 text-emerald-700",
+                                      ].join(" ")}
+                                    >
+                                      {isFull
+                                        ? "เต็ม"
                                         : hasBooking
-                                          ? "text-amber-700"
-                                          : "text-emerald-700",
-                                    ].join(" ")}
-                                  >
-                                    {hasBooking
-                                      ? `จอง ${day.bookedCount}`
-                                      : "ว่าง"}
-                                  </p>
-                                  <p className="mt-1 text-xs font-semibold text-slate-500">
-                                    เหลือ {day.availableCount}
-                                  </p>
+                                          ? `จอง ${day.bookedCount}`
+                                          : "ว่าง"}
+                                    </span>
+                                    <span className="rounded-full bg-white/90 px-2 py-1 text-[11px] font-black text-slate-600 ring-1 ring-slate-200">
+                                      เหลือ {day.availableCount}
+                                    </span>
+                                  </div>
 
                                   {day.bookings.slice(0, 2).map((booking) => (
                                     <div
                                       key={booking.id}
-                                      className="mt-2 rounded-xl bg-white px-2 py-2 text-xs font-bold text-slate-700 shadow-sm"
+                                      className="mt-2 rounded-xl bg-white/95 p-2 text-xs shadow-sm ring-1 ring-slate-200"
                                     >
-                                      <p className="truncate">
+                                      <p className="truncate font-black text-slate-950">
                                         {booking.displayName || "ลูกค้า"}
                                       </p>
-                                      <p className="mt-0.5 truncate text-slate-400">
-                                        {booking.status || "PENDING"}
-                                      </p>
+                                      <span
+                                        className={[
+                                          "mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase",
+                                          booking.status === "CONFIRMED"
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : "bg-amber-50 text-amber-700",
+                                        ].join(" ")}
+                                      >
+                                        {booking.status === "CONFIRMED"
+                                          ? "CONFIRMED"
+                                          : "IN PROCESS"}
+                                      </span>
                                     </div>
                                   ))}
 
@@ -833,7 +858,7 @@ export default function AdminDashboardPage() {
               </div>
             </section>
 
-            <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <section className="mt-5">
               <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -948,7 +973,7 @@ export default function AdminDashboardPage() {
                 )}
               </div>
 
-              <aside className="grid gap-5">
+              <aside className="hidden">
                 <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
                   <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
                     Payment Queue

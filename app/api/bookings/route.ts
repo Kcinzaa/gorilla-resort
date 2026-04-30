@@ -313,7 +313,7 @@ export async function POST(request: Request) {
         status: "PENDING",
 
         depositAmount,
-        paymentStatus: "PENDING",
+        paymentStatus: "PAID",
         paymentMethod,
         paymentSlipUrl,
         paymentReference,
@@ -326,7 +326,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "ส่งคำขอจองและข้อมูลชำระเงินสำเร็จ",
+      message: "ส่งคำขอจองและแจ้งชำระเงินสำเร็จ",
       data: booking,
     });
   } catch (error) {
