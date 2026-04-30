@@ -76,8 +76,12 @@ export default function Navbar({
       <header className="sticky top-3 z-40 mb-5 rounded-[1.5rem] bg-white/95 px-4 py-3 shadow-sm ring-1 ring-slate-200 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           <Link href="/home" className="flex min-w-0 items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
-              <Hotel size={25} className="text-white" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
+                <img
+                src="/images/logo.png"
+                alt="Gorilla Resort Logo"
+                className="h-full w-full object-contain"
+                />
             </div>
 
             <div className="hidden min-w-0 sm:block">
