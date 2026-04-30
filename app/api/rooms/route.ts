@@ -16,7 +16,17 @@ export async function GET() {
         isActive: true,
       },
       orderBy: {
-        createdAt: "desc",
+        id: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        pricePerNight: true,
+        capacity: true,
+        totalRooms: true,
+        imageUrl: true,
+        isActive: true,
       },
     });
 
