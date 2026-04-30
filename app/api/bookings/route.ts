@@ -233,11 +233,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!paymentReference && !paymentSlipUrl) {
+    if (!paymentSlipUrl) {
       return NextResponse.json(
         {
           success: false,
-          message: "กรุณากรอกเลขอ้างอิงการโอน หรือแนบสลิป",
+          message: "กรุณาแนบสลิปการชำระเงิน",
         },
         { status: 400 }
       );
@@ -374,11 +374,11 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (!paymentReference && !paymentSlipUrl) {
+    if (!paymentSlipUrl) {
       return NextResponse.json(
         {
           success: false,
-          message: "กรุณากรอกเลขอ้างอิงการโอน หรือแนบสลิป",
+          message: "กรุณาแนบสลิปการชำระเงิน",
         },
         { status: 400 }
       );

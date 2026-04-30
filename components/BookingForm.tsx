@@ -86,7 +86,6 @@ export default function BookingForm({
 
   const [paymentMethod, setPaymentMethod] = useState("PROMPTPAY");
   const [paymentSlipUrl, setPaymentSlipUrl] = useState("");
-  const [paymentReference, setPaymentReference] = useState("");
 
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [slipUploading, setSlipUploading] = useState(false);
@@ -207,8 +206,8 @@ export default function BookingForm({
       return;
     }
 
-    if (!paymentReference.trim() && !paymentSlipUrl.trim()) {
-      setError("กรุณากรอกเลขอ้างอิงการโอน หรือแนบรูปสลิปการชำระเงิน");
+    if (!paymentSlipUrl.trim()) {
+      setError("กรุณาแนบรูปสลิปการชำระเงิน");
       return;
     }
 
@@ -237,7 +236,7 @@ export default function BookingForm({
           note: note.trim(),
           paymentMethod,
           paymentSlipUrl: paymentSlipUrl.trim(),
-          paymentReference: paymentReference.trim(),
+          paymentReference: "",
 
           // ใช้ชื่อ field เดิมเพื่อให้ backend เดิมไม่พัง
           // แต่ค่าเป็นยอดเต็มจำนวนแล้ว
@@ -579,7 +578,7 @@ export default function BookingForm({
                   </div>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div>
                   <div>
                     <label className="mb-2 block text-sm font-black text-slate-700">
                       วิธีชำระเงิน
@@ -597,27 +596,11 @@ export default function BookingForm({
                       <option value="OTHER">อื่น ๆ</option>
                     </select>
                   </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-black text-slate-700">
-                      เลขอ้างอิงการโอน
-                    </label>
-
-                    <input
-                      value={paymentReference}
-                      onChange={(event) => {
-                        setPaymentReference(event.target.value);
-                        clearError();
-                      }}
-                      placeholder="เช่น 202604291234"
-                      className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                    />
-                  </div>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
-                    แนบรูปสลิปการชำระเงิน
+                    แนบรูปสลิปการชำระเงิน <span className="text-red-500">*</span>
                   </label>
 
                   <input
@@ -626,7 +609,7 @@ export default function BookingForm({
                     onChange={(event) =>
                       handleSlipUpload(event.target.files?.[0])
                     }
-                    className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-slate-900 outline-none file:mr-4 file:rounded-xl file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-black file:text-white hover:file:bg-slate-800"
+                    className="block w-full rounded-[1.5rem] border-2 border-dashed border-emerald-300 bg-emerald-50 px-5 py-8 text-base font-bold text-slate-900 outline-none transition file:mr-4 file:rounded-2xl file:border-0 file:bg-emerald-600 file:px-6 file:py-4 file:text-base file:font-black file:text-white hover:file:bg-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                   />
 
                   {slipUploading && (
