@@ -7,16 +7,13 @@ import {
   AlertCircle,
   ArrowRight,
   BedDouble,
-  CalendarCheck,
-  CheckCircle2,
   Eye,
-  Hotel,
   ImageIcon,
   Loader2,
+  MapPin,
+  MessageCircle,
+  Phone,
   RefreshCcw,
-  SearchCheck,
-  ShieldCheck,
-  Sparkles,
   Users,
   Wallet,
 } from "lucide-react";
@@ -48,11 +45,6 @@ export default function RoomsPage() {
   const activeRooms = useMemo(() => {
     return rooms.filter((room) => room.isActive !== false);
   }, [rooms]);
-
-  const minPrice = useMemo(() => {
-    if (activeRooms.length === 0) return 0;
-    return Math.min(...activeRooms.map((room) => room.pricePerNight));
-  }, [activeRooms]);
 
   async function fetchRooms() {
     try {
@@ -95,77 +87,6 @@ export default function RoomsPage() {
     <main className="min-h-screen bg-slate-100 text-slate-950">
       <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
         <Navbar />
-
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8 lg:p-10">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
-          </div>
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 ring-1 ring-white/10">
-                <BedDouble size={16} className="text-slate-200" />
-                <span className="text-slate-200">Room Collection</span>
-              </div>
-
-              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                เลือกห้องพักที่เหมาะกับการพักผ่อนของคุณ
-              </h1>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ดูรายละเอียดประเภทห้องพัก ราคา จำนวนผู้เข้าพัก และกดจองได้ทันที
-                หรือเลือกเช็คห้องว่างตามวันที่ต้องการก่อนจองจริง
-              </p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href="/availability"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
-                  <span className="text-white">เช็คห้องว่างก่อนจอง</span>
-                  <SearchCheck size={18} className="text-white" />
-                </Link>
-
-                <Link
-                  href="/booking-menu"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
-                >
-                  <span className="text-slate-950">กลับหน้าเมนูจอง</span>
-                  <ArrowRight size={18} className="text-slate-950" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Hotel size={26} className="text-slate-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {activeRooms.length}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">
-                  ประเภทห้องเปิดให้จอง
-                </p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Wallet size={26} className="text-slate-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {minPrice > 0 ? formatCurrency(minPrice) : "-"}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">ราคาเริ่มต้น</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <ShieldCheck size={26} className="text-slate-300" />
-                <p className="mt-4 text-3xl font-black text-white">Admin</p>
-                <p className="mt-1 text-sm text-slate-300">
-                  มีแอดมินตรวจสอบ
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         <section className="mt-5">
           {loading && (
@@ -335,23 +256,13 @@ export default function RoomsPage() {
                         </span>
                       </Link>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Link
-                          href={`/booking?roomTypeId=${room.id}`}
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
-                        >
-                          <span className="text-white">จองห้องนี้</span>
-                          <ArrowRight size={18} className="text-white" />
-                        </Link>
-
-                        <Link
-                          href="/availability"
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                        >
-                          <span className="text-white">เช็กวันว่าง</span>
-                          <SearchCheck size={18} className="text-white" />
-                        </Link>
-                      </div>
+                      <Link
+                        href={`/booking?roomTypeId=${room.id}`}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                      >
+                        <span className="text-white">จองห้องนี้</span>
+                        <ArrowRight size={18} className="text-white" />
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -360,55 +271,45 @@ export default function RoomsPage() {
           )}
         </section>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">
-              <Sparkles size={16} className="text-slate-600" />
-              <span className="text-slate-600">Booking Tips</span>
+        <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+                Contact Resort
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-slate-950">
+                ติดต่อรีสอร์ท
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
+                หากต้องการสอบถามรายละเอียดห้องพัก การเดินทาง หรือแจ้งข้อมูลเพิ่มเติมหลังจอง
+                สามารถติดต่อรีสอร์ทได้ตามช่องทางด้านล่าง
+              </p>
             </div>
 
-            <h2 className="text-3xl font-black text-slate-950">
-              แนะนำก่อนจองห้องพัก
-            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                <Phone size={22} className="text-emerald-600" />
+                <p className="mt-3 text-xs font-bold text-slate-500">โทร</p>
+                <p className="mt-1 font-black text-slate-950">08x-xxx-xxxx</p>
+              </div>
 
-            <p className="mt-3 text-sm leading-7 text-slate-500">
-              หากยังไม่แน่ใจว่าห้องไหนว่างในวันที่ต้องการ แนะนำให้กดเช็คห้องว่างก่อน
-              ระบบจะแสดงจำนวนห้องว่างของแต่ละประเภทตามช่วงวันที่เลือก
-            </p>
+              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                <MessageCircle size={22} className="text-emerald-600" />
+                <p className="mt-3 text-xs font-bold text-slate-500">LINE OA</p>
+                <p className="mt-1 font-black text-slate-950">Gorilla Resort</p>
+              </div>
 
-            <Link
-              href="/availability"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-            >
-              <span className="text-white">ไปหน้าเช็คห้องว่าง</span>
-              <SearchCheck size={18} className="text-white" />
-            </Link>
-          </div>
-
-          <div className="rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8">
-            <CheckCircle2 size={32} className="text-emerald-300" />
-
-            <h2 className="mt-5 text-3xl font-black text-white">
-              ส่งคำขอจองแล้วรอแอดมินยืนยัน
-            </h2>
-
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              หลังจากลูกค้ากรอกข้อมูลและส่งคำขอจอง ระบบจะบันทึกรายการเป็นสถานะรอตรวจสอบ
-              จากนั้นแอดมินของรีสอร์ทสามารถยืนยันหรือเปลี่ยนสถานะได้จากหลังบ้าน
-            </p>
-
-            <Link
-              href="/my-bookings"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
-            >
-              <span className="text-slate-950">ดูการจองของฉัน</span>
-              <CalendarCheck size={18} className="text-slate-950" />
-            </Link>
+              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                <MapPin size={22} className="text-emerald-600" />
+                <p className="mt-3 text-xs font-bold text-slate-500">ที่ตั้ง</p>
+                <p className="mt-1 font-black text-slate-950">ติดต่อรีสอร์ท</p>
+              </div>
+            </div>
           </div>
         </section>
 
         <footer className="mt-5 rounded-[2rem] bg-white px-6 py-5 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
-          Room Collection • Resort Booking System
+          Gorilla Resort • Resort Booking System
         </footer>
       </section>
     </main>
