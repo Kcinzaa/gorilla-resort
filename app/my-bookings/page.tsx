@@ -862,7 +862,7 @@ export default function MyBookingsPage() {
                               <div className="flex items-start justify-between gap-4">
                                 <div>
                                   <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Deposit Payment
+                                    Payment
                                   </p>
                                   <p className="mt-1 text-2xl font-black text-slate-950">
                                     {formatCurrency(depositAmount)}

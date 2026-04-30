@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
             <div className="relative z-10 flex min-h-[720px] flex-col justify-between">
               <div>
                 <Link
-                  href="/home"
+                  href="/rooms"
                   className="mb-10 inline-flex items-center gap-3 rounded-[2rem] bg-white/10 px-4 py-3 ring-1 ring-white/10 transition hover:bg-white/15"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950">
@@ -290,10 +290,10 @@ export default function AdminLoginPage() {
               </div>
 
               <Link
-                href="/home"
+                href="/rooms"
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
               >
-                <span className="text-slate-700">กลับหน้าแรกของรีสอร์ท</span>
+                <span className="text-slate-700">ไปหน้าห้องพัก</span>
                 <ArrowRight size={18} className="text-slate-700" />
               </Link>
             </div>

@@ -485,7 +485,7 @@ export default function AdminDashboardPage() {
           </div>
         </header>
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8 lg:p-10">
+        <section className="hidden">
           <div className="absolute inset-0 opacity-30">
             <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
             <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
@@ -930,10 +930,6 @@ export default function AdminDashboardPage() {
                                 <p className="truncate text-sm text-slate-500">
                                   {booking.roomType?.name || "ห้องพัก"} •{" "}
                                   {formatDateTime(booking.createdAt)}
-                                </p>
-                                <p className="mt-1 text-sm font-bold text-emerald-700">
-                                  มัดจำ{" "}
-                                  {formatCurrency(booking.depositAmount || 0)}
                                 </p>
                               </div>
                             </div>

@@ -183,11 +183,11 @@ export default function BookingSuccessClient() {
                 </Link>
 
                 <Link
-                  href="/home"
+                  href="/rooms"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-xl"
                 >
                   <Home size={18} className="text-slate-950" />
-                  <span className="text-slate-950">กลับหน้าแรก</span>
+                  <span className="text-slate-950">ไปหน้าห้องพัก</span>
                 </Link>
 
                 <Link
@@ -487,10 +487,10 @@ export default function BookingSuccessClient() {
               </Link>
 
               <Link
-                href="/home"
+                href="/rooms"
                 className="group flex items-center justify-between gap-3 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
               >
-                <span className="text-slate-700">กลับหน้าแรก</span>
+                <span className="text-slate-700">ไปหน้าห้องพัก</span>
                 <Home
                   size={18}
                   className="text-slate-700 transition group-hover:scale-110"

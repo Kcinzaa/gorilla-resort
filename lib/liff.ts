@@ -59,7 +59,9 @@ export async function getLiffProfile(): Promise<LineProfile> {
     });
 
     if (!liff.isLoggedIn()) {
-      liff.login();
+      liff.login({
+        redirectUri: `${window.location.origin}/rooms`,
+      });
 
       if (!canUseDevProfile()) {
         throw new Error("กำลังพาเข้าสู่ระบบ LINE");

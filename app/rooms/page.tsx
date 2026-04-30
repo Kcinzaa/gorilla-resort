@@ -291,19 +291,19 @@ export default function RoomsPage() {
               <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                 <Phone size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">โทร</p>
-                <p className="mt-1 font-black text-slate-950">08x-xxx-xxxx</p>
+                <p className="mt-1 font-black text-slate-950">091 782 5165</p>
               </div>
 
               <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                 <MessageCircle size={22} className="text-emerald-600" />
-                <p className="mt-3 text-xs font-bold text-slate-500">LINE OA</p>
-                <p className="mt-1 font-black text-slate-950">Gorilla Resort</p>
+                <p className="mt-3 text-xs font-bold text-slate-500">อีเมล</p>
+                <p className="mt-1 font-black text-slate-950">gorillaresort61@gmail.com</p>
               </div>
 
               <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                 <MapPin size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">ที่ตั้ง</p>
-                <p className="mt-1 font-black text-slate-950">ติดต่อรีสอร์ท</p>
+                <p className="mt-1 font-black text-slate-950">61 , Amphoe Kamphaeng Saen, Thailand, 73140</p>
               </div>
             </div>
           </div>

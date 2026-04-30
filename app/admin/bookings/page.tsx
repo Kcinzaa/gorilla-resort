@@ -406,11 +406,11 @@ export default function AdminBookingsPage() {
               </Link>
 
               <Link
-                href="/home"
+                href="/rooms"
                 className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200"
               >
                 <Home size={17} className="text-slate-700" />
-                <span className="text-slate-700">หน้าเว็บ</span>
+                <span className="text-slate-700">ไปหน้าห้องพัก</span>
               </Link>
 
               <button
