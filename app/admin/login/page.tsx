@@ -6,14 +6,11 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowRight,
-  BedDouble,
   Eye,
   EyeOff,
-  Hotel,
   Loader2,
   LockKeyhole,
   ShieldCheck,
-  Sparkles,
   User,
 } from "lucide-react";
 
@@ -76,101 +73,8 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <section className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-3 py-6 sm:px-6 lg:px-8">
-        <div className="grid w-full gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-2xl shadow-slate-300 sm:rounded-[3rem] sm:p-8 lg:p-10">
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute -left-28 top-8 h-80 w-80 rounded-full bg-emerald-500 blur-3xl" />
-              <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-blue-500 blur-3xl" />
-            </div>
-
-            <div className="relative z-10 flex min-h-[720px] flex-col justify-between">
-              <div>
-                <Link
-                  href="/rooms"
-                  className="mb-10 inline-flex items-center gap-3 rounded-[2rem] bg-white/10 px-4 py-3 ring-1 ring-white/10 transition hover:bg-white/15"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950">
-                    <Hotel size={25} className="text-slate-950" />
-                  </div>
-
-                  <div>
-                    <p className="font-black text-white">Resort Booking</p>
-                    <p className="text-sm text-slate-300">
-                      Admin Management
-                    </p>
-                  </div>
-                </Link>
-
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 text-sm font-bold text-emerald-200 ring-1 ring-emerald-400/20">
-                  <ShieldCheck size={17} className="text-emerald-200" />
-                  <span className="text-emerald-200">Admin Secure Login</span>
-                </div>
-
-                <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-                  เข้าสู่ระบบหลังบ้านสำหรับจัดการรีสอร์ท
-                </h1>
-
-                <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base sm:leading-8">
-                  จัดการรายการจอง ตรวจสอบสถานะลูกค้า เพิ่ม/แก้ไขห้องพัก
-                  และควบคุมข้อมูลหลักของระบบ Resort Booking ได้จากที่เดียว
-                </p>
-
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[2rem] bg-white/10 p-4 ring-1 ring-white/10">
-                    <BedDouble size={26} className="text-slate-300" />
-                    <p className="mt-4 text-3xl font-black text-white">
-                      Rooms
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      จัดการห้องพัก
-                    </p>
-                  </div>
-
-                  <div className="rounded-[2rem] bg-white/10 p-4 ring-1 ring-white/10">
-                    <ShieldCheck size={26} className="text-slate-300" />
-                    <p className="mt-4 text-3xl font-black text-white">
-                      Admin
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      ระบบหลังบ้าน
-                    </p>
-                  </div>
-
-                  <div className="rounded-[2rem] bg-white/10 p-4 ring-1 ring-white/10">
-                    <Sparkles size={26} className="text-slate-300" />
-                    <p className="mt-4 text-3xl font-black text-white">
-                      Easy
-                    </p>
-                    <p className="mt-1 text-sm text-slate-300">
-                      ใช้งานง่าย
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10 rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <p className="text-sm font-bold text-slate-300">
-                  Production Credentials
-                </p>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-xs text-slate-400">Username</p>
-                    <p className="mt-1 font-black text-white">ADMIN_USERNAME</p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white/10 p-4">
-                    <p className="text-xs text-slate-400">Password</p>
-                    <p className="mt-1 font-black text-white">ADMIN_PASSWORD</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="flex items-center">
-            <div className="w-full rounded-[2rem] bg-white p-5 shadow-xl shadow-slate-300 ring-1 ring-slate-200 sm:rounded-[3rem] sm:p-8 lg:p-10">
+      <section className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-3 py-6 sm:px-6 lg:px-8">
+            <div className="w-full rounded-[2rem] bg-white p-5 shadow-xl shadow-slate-300 ring-1 ring-slate-200 sm:rounded-[3rem] sm:p-8">
               <div className="mb-8">
                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-[2rem] bg-slate-950 text-white">
                   <LockKeyhole size={32} className="text-white" />
@@ -272,23 +176,6 @@ export default function AdminLoginPage() {
                 </button>
               </form>
 
-              <div className="mt-6 rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                    <ShieldCheck size={22} className="text-emerald-600" />
-                  </div>
-
-                  <div>
-                    <p className="font-black text-slate-950">
-                      สำหรับผู้ดูแลระบบเท่านั้น
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                      หน้านี้ใช้สำหรับจัดการข้อมูลหลังบ้าน เช่น รายการจองและห้องพัก
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <Link
                 href="/rooms"
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
@@ -297,8 +184,6 @@ export default function AdminLoginPage() {
                 <ArrowRight size={18} className="text-slate-700" />
               </Link>
             </div>
-          </section>
-        </div>
       </section>
     </main>
   );
