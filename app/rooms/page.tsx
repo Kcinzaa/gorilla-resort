@@ -150,14 +150,6 @@ export default function RoomsPage() {
               </div>
 
               <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Wallet size={26} className="text-slate-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {minPrice > 0 ? formatCurrency(minPrice) : "-"}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">ราคาเริ่มต้น</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
                 <ShieldCheck size={26} className="text-slate-300" />
                 <p className="mt-4 text-3xl font-black text-white">Admin</p>
                 <p className="mt-1 text-sm text-slate-300">
