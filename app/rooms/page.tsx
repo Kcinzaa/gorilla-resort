@@ -150,13 +150,14 @@ export default function RoomsPage() {
                 หรือกลับมาตรวจสอบอีกครั้งภายหลัง
               </p>
 
-              <Link
-                href="/booking-menu"
+              <button
+                type="button"
+                onClick={fetchRooms}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                <span className="text-white">กลับหน้าเมนูจอง</span>
-                <ArrowRight size={18} className="text-white" />
-              </Link>
+                <RefreshCcw size={18} className="text-white" />
+                <span className="text-white">โหลดรายการห้องใหม่</span>
+              </button>
             </div>
           )}
 

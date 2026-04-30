@@ -44,7 +44,7 @@ function calculateDeposit(totalPrice: number) {
     return 0;
   }
 
-  return Math.max(Math.ceil(totalPrice * 0.3), 500);
+  return totalPrice;
 }
 
 async function getAvailableRooms({
@@ -326,7 +326,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "ส่งคำขอจองและข้อมูลมัดจำสำเร็จ",
+      message: "ส่งคำขอจองและข้อมูลชำระเงินสำเร็จ",
       data: booking,
     });
   } catch (error) {

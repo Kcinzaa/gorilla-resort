@@ -7,12 +7,9 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import {
   BedDouble,
   CalendarCheck,
-  Home,
-  Hotel,
   LayoutDashboard,
   Loader2,
   Menu,
-  SearchCheck,
   User,
   X,
 } from "lucide-react";
@@ -23,21 +20,6 @@ type NavbarProps = {
 };
 
 const navItems = [
-  {
-    label: "หน้าแรก",
-    href: "/home",
-    icon: Home,
-  },
-  {
-    label: "เมนูจอง",
-    href: "/booking-menu",
-    icon: Hotel,
-  },
-  {
-    label: "เช็คห้องว่าง",
-    href: "/availability",
-    icon: SearchCheck,
-  },
   {
     label: "ห้องพัก",
     href: "/rooms",
@@ -63,8 +45,8 @@ export default function Navbar({
   const isAdmin = profile?.isAdmin === true;
 
   function isActivePath(href: string) {
-    if (href === "/home") {
-      return pathname === "/home" || pathname === "/";
+    if (href === "/rooms") {
+      return pathname === "/" || pathname === "/rooms" || pathname.startsWith("/rooms/");
     }
 
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -83,7 +65,7 @@ export default function Navbar({
     <>
       <header className="sticky top-3 z-40 mb-5 rounded-[1.5rem] bg-white/95 px-4 py-3 shadow-sm ring-1 ring-slate-200 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/home" className="flex min-w-0 items-center gap-3">
+          <Link href="/rooms" className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
               <img
                 src="/images/logo/logo.jpg"

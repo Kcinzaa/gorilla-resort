@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
-  Home,
   Hotel,
   Loader2,
   ReceiptText,
@@ -472,94 +471,73 @@ export default function MyBookingsPage() {
           </div>
         )}
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8 lg:p-10">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
-          </div>
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-end">
+        <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6">
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr] lg:items-end">
             <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 ring-1 ring-white/10">
-                <CalendarCheck size={16} className="text-slate-200" />
-                <span className="text-slate-200">My Reservations</span>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+                <CalendarCheck size={16} className="text-slate-600" />
+                <span className="text-slate-600">My Reservations</span>
               </div>
 
-              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
                 การจองของฉัน
               </h1>
 
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
                 ตรวจสอบรายการจองล่าสุด ดูสถานะการยืนยัน รายละเอียดห้องพัก
                 วันที่เข้าพัก และสถานะการชำระเงิน
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href="/availability"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
-                  <span className="text-white">เช็คห้องว่างเพิ่ม</span>
-                  <SearchCheck size={18} className="text-white" />
-                </Link>
-
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/rooms"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:bg-slate-800"
                 >
-                  <span className="text-slate-950">ดูห้องพัก</span>
-                  <BedDouble size={18} className="text-slate-950" />
-                </Link>
-
-                <Link
-                  href="/home"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-6 py-4 text-sm font-black text-white ring-1 ring-white/15 transition hover:bg-white/20"
-                >
-                  <span className="text-white">กลับหน้าแรก</span>
-                  <Home size={18} className="text-white" />
+                  <span className="text-white">ดูห้องพัก</span>
+                  <BedDouble size={18} className="text-white" />
                 </Link>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Clock3 size={26} className="text-amber-300" />
-                <p className="mt-4 text-3xl font-black text-white">
+              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                <Clock3 size={26} className="text-amber-600" />
+                <p className="mt-4 text-3xl font-black text-slate-950">
                   {pendingCount}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">รอตรวจสอบ</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">รอตรวจสอบ</p>
               </div>
 
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <CheckCircle2 size={26} className="text-emerald-300" />
-                <p className="mt-4 text-3xl font-black text-white">
+              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                <CheckCircle2 size={26} className="text-emerald-600" />
+                <p className="mt-4 text-3xl font-black text-slate-950">
                   {confirmedCount}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">ยืนยันแล้ว</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">ยืนยันแล้ว</p>
               </div>
 
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <ReceiptText size={26} className="text-blue-300" />
-                <p className="mt-4 text-3xl font-black text-white">
+              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                <ReceiptText size={26} className="text-blue-600" />
+                <p className="mt-4 text-3xl font-black text-slate-950">
                   {waitingPaymentCount}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">รอตรวจสลิป</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">รอตรวจสลิป</p>
               </div>
 
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Banknote size={26} className="text-emerald-300" />
-                <p className="mt-4 text-3xl font-black text-white">
+              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                <Banknote size={26} className="text-emerald-600" />
+                <p className="mt-4 text-3xl font-black text-slate-950">
                   {paidCount}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">ชำระแล้ว</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">ชำระแล้ว</p>
               </div>
 
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <XCircle size={26} className="text-red-300" />
-                <p className="mt-4 text-3xl font-black text-white">
+              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                <XCircle size={26} className="text-red-600" />
+                <p className="mt-4 text-3xl font-black text-slate-950">
                   {rejectedPaymentCount}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">สลิปไม่ถูกต้อง</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">สลิปไม่ถูกต้อง</p>
               </div>
             </div>
           </div>

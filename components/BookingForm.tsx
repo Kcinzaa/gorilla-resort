@@ -3,24 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import QRCode from "qrcode";
 import { useLineProfile } from "@/lib/useLineProfile";
-import { generatePromptPayPayload } from "@/lib/promptpay";
 import {
   AlertCircle,
   ArrowLeft,
-  Banknote,
+  ArrowRight,
   BedDouble,
   CalendarDays,
+  CheckCircle2,
   ImageIcon,
   Loader2,
   Phone,
-  ReceiptText,
-  Send,
-  Sparkles,
   User,
   Users,
   Wallet,
+  XCircle,
 } from "lucide-react";
 
 type RoomType = {
@@ -39,6 +36,13 @@ type BookingFormProps = {
   initialCheckOut?: string;
 };
 
+type AvailabilityResult = {
+  availableRooms: number;
+  bookedRooms: number;
+  totalRooms: number;
+  isAvailable: boolean;
+};
+
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("th-TH", {
     style: "currency",
@@ -53,12 +57,9 @@ function calculateNights(checkIn: string, checkOut: string) {
   const start = new Date(checkIn);
   const end = new Date(checkOut);
 
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return 0;
-  }
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
 
   const diff = end.getTime() - start.getTime();
-
   if (diff <= 0) return 0;
 
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -70,7 +71,6 @@ export default function BookingForm({
   initialCheckOut = "",
 }: BookingFormProps) {
   const router = useRouter();
-
   const {
     profile,
     loading: profileLoading,
@@ -83,134 +83,83 @@ export default function BookingForm({
   const [guests, setGuests] = useState("1");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
-
-  const [paymentMethod, setPaymentMethod] = useState("PROMPTPAY");
-  const [paymentSlipUrl, setPaymentSlipUrl] = useState("");
-  const [selectedSlipFile, setSelectedSlipFile] = useState<File | null>(null);
-  const [localSlipPreviewUrl, setLocalSlipPreviewUrl] = useState("");
-
-  const [qrDataUrl, setQrDataUrl] = useState("");
-  const [slipUploading, setSlipUploading] = useState(false);
-
-  const [loading, setLoading] = useState(false);
+  const [availability, setAvailability] = useState<AvailabilityResult | null>(
+    null
+  );
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
   const [error, setError] = useState("");
 
-  const promptPayId = process.env.NEXT_PUBLIC_PROMPTPAY_ID || "0812345678";
-  const bankName = process.env.NEXT_PUBLIC_RESORT_BANK_NAME || "กสิกรไทย";
-  const accountNo =
-    process.env.NEXT_PUBLIC_RESORT_ACCOUNT_NO || "123-4-56789-0";
-  const accountName =
-    process.env.NEXT_PUBLIC_RESORT_ACCOUNT_NAME || "Resort Booking Demo";
-
-  const nights = useMemo(() => {
-    return calculateNights(checkIn, checkOut);
-  }, [checkIn, checkOut]);
-
+  const nights = useMemo(() => calculateNights(checkIn, checkOut), [
+    checkIn,
+    checkOut,
+  ]);
   const totalPrice = nights * room.pricePerNight;
-
-  // เปลี่ยนจากค่ามัดจำเป็นชำระเต็มจำนวน
-  const paymentAmount = totalPrice > 0 ? totalPrice : 0;
+  const canContinue =
+    Boolean(availability?.isAvailable) &&
+    nights > 0 &&
+    totalPrice > 0 &&
+    !availabilityLoading;
 
   useEffect(() => {
-    async function createQr() {
+    let cancelled = false;
+
+    async function checkAvailability() {
+      setAvailability(null);
+      setAvailabilityError("");
+
+      if (!checkIn || !checkOut || nights <= 0) return;
+
       try {
-        if (!paymentAmount || paymentAmount <= 0) {
-          setQrDataUrl("");
+        setAvailabilityLoading(true);
+
+        const params = new URLSearchParams({
+          roomTypeId: String(room.id),
+          checkIn,
+          checkOut,
+        });
+        const response = await fetch(`/api/rooms/availability-one?${params}`, {
+          cache: "no-store",
+        });
+        const result = await response.json();
+
+        if (cancelled) return;
+
+        if (!response.ok || !result.success) {
+          setAvailabilityError(
+            result.message || "ไม่สามารถตรวจสอบห้องว่างได้"
+          );
           return;
         }
 
-        const payload = generatePromptPayPayload(promptPayId, paymentAmount);
-
-        const url = await QRCode.toDataURL(payload, {
-          width: 320,
-          margin: 2,
-          errorCorrectionLevel: "M",
-        });
-
-        setQrDataUrl(url);
+        setAvailability(result.data);
       } catch (err) {
-        console.warn("Create PromptPay QR failed:", err);
-        setQrDataUrl("");
+        console.warn(err);
+        if (!cancelled) setAvailabilityError("ตรวจสอบห้องว่างไม่สำเร็จ");
+      } finally {
+        if (!cancelled) setAvailabilityLoading(false);
       }
     }
 
-    createQr();
-  }, [paymentAmount, promptPayId]);
+    checkAvailability();
 
-  function clearError() {
+    return () => {
+      cancelled = true;
+    };
+  }, [checkIn, checkOut, nights, room.id]);
+
+  function handleDateChange(nextCheckIn: string, nextCheckOut: string) {
     setError("");
+    setCheckIn(nextCheckIn);
+    setCheckOut(nextCheckOut);
   }
 
-  async function uploadSlipFile(file: File) {
-    if (!file) return "";
-
-    try {
-      setSlipUploading(true);
-      setError("");
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/upload/slip", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(
-          result.detail
-            ? `${result.message || "อัปโหลดสลิปไม่สำเร็จ"}: ${result.detail}`
-            : result.message || "อัปโหลดสลิปไม่สำเร็จ"
-        );
-        return "";
-      }
-
-      const uploadedUrl = result.data?.url || result.url || "";
-      if (!uploadedUrl) {
-        setError("อัปโหลดสลิปแล้ว แต่ระบบไม่ได้รับ URL ของไฟล์");
-        return "";
-      }
-
-      setPaymentSlipUrl(uploadedUrl);
-      return uploadedUrl;
-    } catch (err) {
-      console.warn(err);
-      setError("เกิดข้อผิดพลาดในการอัปโหลดสลิป");
-      return "";
-    } finally {
-      setSlipUploading(false);
-    }
-  }
-
-  async function handleSlipUpload(file?: File) {
-    setPaymentSlipUrl("");
-    setLocalSlipPreviewUrl("");
-
-    if (!file) {
-      setSelectedSlipFile(null);
-      return;
-    }
-
-    setSelectedSlipFile(file);
-    clearError();
-    setLocalSlipPreviewUrl(URL.createObjectURL(file));
-    await uploadSlipFile(file);
-  }
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setError("");
 
-    if (!checkIn || !checkOut) {
-      setError("กรุณาเลือกวันที่เข้าพักและวันที่ออก");
-      return;
-    }
-
-    if (nights <= 0) {
-      setError("วันที่ออกต้องมากกว่าวันที่เข้าพัก");
+    if (!checkIn || !checkOut || nights <= 0) {
+      setError("กรุณาเลือกวันเข้าพักและวันออกให้ถูกต้อง");
       return;
     }
 
@@ -229,88 +178,33 @@ export default function BookingForm({
       return;
     }
 
-    if (paymentAmount <= 0) {
-      setError("ไม่สามารถคำนวณยอดชำระได้ กรุณาเลือกวันที่เข้าพักใหม่");
-      return;
-    }
-
     if (!profile) {
       setError("ไม่พบข้อมูลผู้ใช้ LINE กรุณาลองโหลดหน้าใหม่อีกครั้ง");
       return;
     }
 
-    try {
-      setLoading(true);
-
-      let submittedSlipUrl = paymentSlipUrl.trim();
-
-      if (!submittedSlipUrl && selectedSlipFile) {
-        submittedSlipUrl = await uploadSlipFile(selectedSlipFile);
-
-        if (!submittedSlipUrl) {
-          return;
-        }
-      }
-
-      if (!submittedSlipUrl) {
-        setError("กรุณาแนบรูปสลิป และรอให้อัปโหลดขึ้น Supabase สำเร็จก่อน");
-        return;
-      }
-
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lineUserId: profile.userId,
-          displayName: profile.displayName,
-          pictureUrl: profile.pictureUrl || "",
-          roomTypeId: room.id,
-          checkIn,
-          checkOut,
-          guests: Number(guests),
-          phone: phone.trim(),
-          note: note.trim(),
-          paymentMethod,
-          paymentSlipUrl: submittedSlipUrl,
-          paymentReference: "",
-
-          // ใช้ชื่อ field เดิมเพื่อให้ backend เดิมไม่พัง
-          // แต่ค่าเป็นยอดเต็มจำนวนแล้ว
-          depositAmount: paymentAmount,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setError(result.message || "ไม่สามารถจองห้องพักได้");
-        return;
-      }
-
-      const booking = result.data;
-
-      const successParams = new URLSearchParams({
-        bookingCode: booking?.bookingCode || "",
-        roomName: booking?.roomType?.name || room.name || "",
-        checkIn: booking?.checkIn || checkIn,
-        checkOut: booking?.checkOut || checkOut,
-        guests: String(booking?.guests || guests || ""),
-        totalPrice: String(booking?.totalPrice || totalPrice || ""),
-        depositAmount: String(booking?.depositAmount || paymentAmount || ""),
-        paymentStatus: booking?.paymentStatus || "PENDING",
-        status: booking?.status || "PENDING",
-      });
-
-      router.push(`/booking/success?${successParams.toString()}`);
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      setError("เกิดข้อผิดพลาดในการจองห้องพัก");
-    } finally {
-      setLoading(false);
+    if (!availability?.isAvailable) {
+      setError("ช่วงวันที่เลือกไม่มีห้องว่าง กรุณาเลือกวันอื่น");
+      return;
     }
+
+    sessionStorage.setItem(
+      "gorillaBookingDraft",
+      JSON.stringify({
+        room,
+        checkIn,
+        checkOut,
+        nights,
+        guests: Number(guests),
+        phone: phone.trim(),
+        note: note.trim(),
+        totalPrice,
+        profile,
+        availability,
+      })
+    );
+
+    router.push("/booking/payment");
   }
 
   return (
@@ -328,17 +222,15 @@ export default function BookingForm({
           <h2 className="text-3xl font-black text-slate-950">
             กรอกข้อมูลการจอง
           </h2>
-
           <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-            เลือกวันที่เข้าพัก กรอกข้อมูลผู้เข้าพัก และชำระเต็มจำนวนด้วย QR
-            พร้อมเพย์ เพื่อส่งคำขอจองให้รีสอร์ทตรวจสอบ
+            เลือกวันเข้าพัก ระบบจะตรวจสอบห้องว่างให้ทันที ถ้ามีห้องว่างจึงไปหน้าชำระเงินได้
           </p>
         </div>
 
-        {(error || profileError) && (
+        {(error || profileError || availabilityError) && (
           <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
             <AlertCircle size={20} className="mt-0.5 shrink-0 text-red-600" />
-            <span>{error || profileError}</span>
+            <span>{error || profileError || availabilityError}</span>
           </div>
         )}
 
@@ -354,7 +246,6 @@ export default function BookingForm({
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
                 <CalendarDays size={24} className="text-white" />
               </div>
-
               <div>
                 <h3 className="font-black text-slate-950">วันเข้าพัก</h3>
                 <p className="text-sm text-slate-500">
@@ -364,80 +255,65 @@ export default function BookingForm({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  วันที่เข้าพัก <span className="text-red-500">*</span>
-                </label>
-
-                <div className="relative">
-                  <CalendarDays
-                    size={20}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    type="date"
-                    value={checkIn}
-                    onChange={(event) => {
-                      setCheckIn(event.target.value);
-                      clearError();
-                    }}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  วันที่ออก <span className="text-red-500">*</span>
-                </label>
-
-                <div className="relative">
-                  <CalendarDays
-                    size={20}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    type="date"
-                    value={checkOut}
-                    onChange={(event) => {
-                      setCheckOut(event.target.value);
-                      clearError();
-                    }}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                  />
-                </div>
-              </div>
+              <DateInput
+                label="วันที่เข้าพัก"
+                value={checkIn}
+                onChange={(value) => handleDateChange(value, checkOut)}
+              />
+              <DateInput
+                label="วันที่ออก"
+                value={checkOut}
+                onChange={(value) => handleDateChange(checkIn, value)}
+              />
             </div>
 
             {nights > 0 && (
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    จำนวนคืน
-                  </p>
-                  <p className="mt-1 text-xl font-black text-slate-950">
-                    {nights} คืน
-                  </p>
-                </div>
+                <SummaryCard label="จำนวนคืน" value={`${nights} คืน`} />
+                <SummaryCard
+                  label="ราคาต่อคืน"
+                  value={formatCurrency(room.pricePerNight)}
+                />
+                <SummaryCard
+                  dark
+                  label="ยอดชำระทั้งหมด"
+                  value={formatCurrency(totalPrice)}
+                />
+              </div>
+            )}
 
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    ราคาต่อคืน
-                  </p>
-                  <p className="mt-1 text-xl font-black text-slate-950">
-                    {formatCurrency(room.pricePerNight)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-slate-950 p-4 text-white">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    ยอดชำระทั้งหมด
-                  </p>
-                  <p className="mt-1 text-xl font-black text-white">
-                    {formatCurrency(totalPrice)}
-                  </p>
+            {(availabilityLoading || availability) && (
+              <div
+                className={[
+                  "mt-5 rounded-2xl p-4 ring-1",
+                  availability?.isAvailable
+                    ? "bg-emerald-50 text-emerald-800 ring-emerald-100"
+                    : "bg-red-50 text-red-700 ring-red-100",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  {availabilityLoading ? (
+                    <Loader2 size={24} className="animate-spin text-slate-500" />
+                  ) : availability?.isAvailable ? (
+                    <CheckCircle2 size={24} className="text-emerald-600" />
+                  ) : (
+                    <XCircle size={24} className="text-red-600" />
+                  )}
+                  <div>
+                    <p className="font-black">
+                      {availabilityLoading
+                        ? "กำลังตรวจสอบห้องว่าง..."
+                        : availability?.isAvailable
+                          ? `ว่าง ${availability.availableRooms} ห้อง`
+                          : "ห้องเต็มในช่วงวันที่เลือก"}
+                    </p>
+                    {availability && (
+                      <p className="mt-1 text-sm font-semibold">
+                        ทั้งหมด {availability.totalRooms} ห้อง จองแล้ว{" "}
+                        {availability.bookedRooms} ห้อง
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -448,7 +324,6 @@ export default function BookingForm({
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
                 <User size={24} className="text-white" />
               </div>
-
               <div>
                 <h3 className="font-black text-slate-950">ข้อมูลผู้เข้าพัก</h3>
                 <p className="text-sm text-slate-500">
@@ -462,13 +337,11 @@ export default function BookingForm({
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   จำนวนผู้เข้าพัก <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <Users
                     size={20}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                   />
-
                   <input
                     type="number"
                     min="1"
@@ -478,7 +351,6 @@ export default function BookingForm({
                     className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
                   />
                 </div>
-
                 <p className="mt-2 text-xs font-semibold text-slate-500">
                   ห้องนี้รองรับได้สูงสุด {room.capacity} คน
                 </p>
@@ -488,13 +360,11 @@ export default function BookingForm({
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   เบอร์โทรศัพท์ <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <Phone
                     size={20}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                   />
-
                   <input
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
@@ -509,7 +379,6 @@ export default function BookingForm({
               <label className="mb-2 block text-sm font-black text-slate-700">
                 หมายเหตุเพิ่มเติม
               </label>
-
               <textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
@@ -520,232 +389,17 @@ export default function BookingForm({
             </div>
           </div>
 
-          <div className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200 sm:p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white">
-                <ReceiptText size={24} className="text-white" />
-              </div>
-
-              <div>
-                <h3 className="font-black text-slate-950">
-                  ชำระเต็มจำนวน
-                </h3>
-                <p className="text-sm text-slate-500">
-                  สแกน QR พร้อมเพย์เพื่อชำระยอดเต็มจำนวน แล้วแนบสลิปการโอน
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  ยอดรวม
-                </p>
-                <p className="mt-1 text-xl font-black text-slate-950">
-                  {formatCurrency(totalPrice)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-emerald-600 p-4 text-white">
-                <p className="text-xs font-bold uppercase tracking-wide text-emerald-100">
-                  ต้องชำระ
-                </p>
-                <p className="mt-1 text-xl font-black text-white">
-                  {formatCurrency(paymentAmount)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-5 lg:grid-cols-[320px_1fr]">
-              <div className="rounded-[2rem] bg-white p-4 text-center ring-1 ring-slate-200">
-                <p className="mb-3 text-sm font-black text-slate-950">
-                  QR พร้อมเพย์สำหรับชำระเต็มจำนวน
-                </p>
-
-                {qrDataUrl ? (
-                  <img
-                    src={qrDataUrl}
-                    alt="PromptPay QR"
-                    className="mx-auto h-72 w-72 rounded-2xl bg-white object-contain"
-                  />
-                ) : (
-                  <div className="flex h-72 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-500">
-                    เลือกวันที่เพื่อคำนวณยอดชำระ
-                  </div>
-                )}
-
-                <p className="mt-3 text-xs font-bold text-slate-500">
-                  PromptPay ID: {promptPayId}
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Wallet size={20} className="text-slate-500" />
-                    <p className="font-black text-slate-950">
-                      ข้อมูลบัญชีรับชำระ
-                    </p>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs font-bold text-slate-500">ธนาคาร</p>
-                      <p className="mt-1 font-black text-slate-950">
-                        {bankName}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="text-xs font-bold text-slate-500">
-                        เลขบัญชี
-                      </p>
-                      <p className="mt-1 font-black text-slate-950">
-                        {accountNo}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-50 p-4 sm:col-span-2">
-                      <p className="text-xs font-bold text-slate-500">
-                        ชื่อบัญชี
-                      </p>
-                      <p className="mt-1 font-black text-slate-950">
-                        {accountName}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div>
-                    <label className="mb-2 block text-sm font-black text-slate-700">
-                      วิธีชำระเงิน
-                    </label>
-
-                    <select
-                      value={paymentMethod}
-                      onChange={(event) =>
-                        setPaymentMethod(event.target.value)
-                      }
-                      className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                    >
-                      <option value="PROMPTPAY">พร้อมเพย์ QR</option>
-                      <option value="BANK_TRANSFER">โอนผ่านธนาคาร</option>
-                      <option value="OTHER">อื่น ๆ</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-black text-slate-700">
-                    แนบรูปสลิปการชำระเงิน <span className="text-red-500">*</span>
-                  </label>
-
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      handleSlipUpload(event.target.files?.[0])
-                    }
-                    className="block w-full rounded-[1.5rem] border-2 border-dashed border-emerald-300 bg-emerald-50 px-5 py-8 text-base font-bold text-slate-900 outline-none transition file:mr-4 file:rounded-2xl file:border-0 file:bg-emerald-600 file:px-6 file:py-4 file:text-base file:font-black file:text-white hover:file:bg-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                  />
-
-                  {slipUploading && (
-                    <div className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-500">
-                      <Loader2 size={18} className="animate-spin" />
-                      กำลังอัปโหลดสลิป...
-                    </div>
-                  )}
-
-                  {!slipUploading && selectedSlipFile && !paymentSlipUrl && (
-                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
-                      เลือกไฟล์แล้ว แต่ยังอัปโหลดขึ้น Supabase ไม่สำเร็จ กรุณาตรวจสอบ env หรือกดเลือกไฟล์อีกครั้ง
-                    </div>
-                  )}
-
-                  {!slipUploading && paymentSlipUrl && (
-                    <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-                      อัปโหลดสลิปสำเร็จแล้ว
-                    </div>
-                  )}
-
-                  {(paymentSlipUrl || localSlipPreviewUrl) && (
-                    <div className="mt-4 overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-slate-200">
-                      <p className="mb-3 text-sm font-black text-slate-700">
-                        ตัวอย่างสลิปที่อัปโหลด
-                      </p>
-
-                      <img
-                        src={paymentSlipUrl || localSlipPreviewUrl}
-                        alt="Payment slip"
-                        className="max-h-80 w-full rounded-xl object-contain"
-                      />
-
-                      {paymentSlipUrl && (
-                        <p className="mt-3 break-all text-xs font-semibold text-slate-500">
-                          {paymentSlipUrl}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <p className="mt-3 text-xs leading-6 text-slate-500">
-                    รองรับไฟล์ JPG, PNG, WEBP ขนาดไม่เกิน 5MB
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <p className="mt-4 text-xs leading-6 text-slate-500">
-              หมายเหตุ: ตอนนี้ระบบเป็นการแสดง QR และแนบสลิปให้แอดมินตรวจสอบ
-              หากต้องการตรวจสอบชำระเงินอัตโนมัติ ต้องต่อ Payment Gateway ที่มี
-              webhook ภายหลัง
-            </p>
-          </div>
-
-          {profile && (
-            <div className="rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-slate-200">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-400">
-                  {profile.pictureUrl ? (
-                    <img
-                      src={profile.pictureUrl}
-                      alt={profile.displayName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <User size={26} />
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    LINE Profile
-                  </p>
-                  <p className="truncate text-lg font-black text-slate-950">
-                    {profile.displayName}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={loading || profileLoading || slipUploading}
-            className="inline-flex h-16 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!canContinue || profileLoading}
+            className="inline-flex h-16 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
           >
-            {loading || profileLoading ? (
-              <>
-                <Loader2 size={22} className="animate-spin text-white" />
-                <span className="text-white">กำลังส่งคำขอจอง...</span>
-              </>
+            {profileLoading ? (
+              <Loader2 size={22} className="animate-spin text-white" />
             ) : (
               <>
-                <Send size={22} className="text-white" />
-                <span className="text-white">
-                  ยืนยันการจองและแจ้งชำระเต็มจำนวน
-                </span>
+                <span className="text-white">ไปหน้าชำระเงิน</span>
+                <ArrowRight size={22} className="text-white" />
               </>
             )}
           </button>
@@ -770,94 +424,110 @@ export default function BookingForm({
         <div className="mt-5">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
             <BedDouble size={14} className="text-slate-600" />
-            Selected Room
+            ห้องที่เลือก
           </div>
-
           <h2 className="text-3xl font-black text-slate-950">{room.name}</h2>
-
           <p className="mt-3 text-sm leading-7 text-slate-500">
             {room.description || "ห้องพักบรรยากาศดี เหมาะสำหรับการพักผ่อน"}
           </p>
         </div>
 
         <div className="mt-5 grid gap-3">
-          <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Users size={18} className="text-slate-500" />
-              <span className="text-sm font-bold text-slate-500">
-                พักได้สูงสุด
-              </span>
-            </div>
-            <span className="font-black text-slate-950">{room.capacity} คน</span>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
-            <div className="flex items-center gap-2 text-slate-500">
-              <BedDouble size={18} className="text-slate-500" />
-              <span className="text-sm font-bold text-slate-500">
-                จำนวนห้องทั้งหมด
-              </span>
-            </div>
-            <span className="font-black text-slate-950">
-              {room.totalRooms ?? 1} ห้อง
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Banknote size={18} className="text-slate-500" />
-              <span className="text-sm font-bold text-slate-500">
-                ราคาต่อคืน
-              </span>
-            </div>
-            <span className="font-black text-slate-950">
-              {formatCurrency(room.pricePerNight)}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
-            <div className="flex items-center gap-2 text-slate-500">
-              <CalendarDays size={18} className="text-slate-500" />
-              <span className="text-sm font-bold text-slate-500">จำนวนคืน</span>
-            </div>
-            <span className="font-black text-slate-950">{nights} คืน</span>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-[2rem] bg-slate-950 p-5 text-white">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                ยอดชำระเต็มจำนวน
-              </p>
-              <p className="mt-2 text-4xl font-black text-white">
-                {formatCurrency(totalPrice)}
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                {nights > 0
-                  ? `${nights} คืน × ${formatCurrency(room.pricePerNight)}`
-                  : "เลือกวันที่เพื่อคำนวณราคา"}
-              </p>
-            </div>
-
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/10">
-              <Sparkles size={30} className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-[2rem] bg-emerald-50 p-5 ring-1 ring-emerald-100">
-          <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-            ต้องชำระทั้งหมด
-          </p>
-          <p className="mt-2 text-3xl font-black text-emerald-700">
-            {formatCurrency(paymentAmount)}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-emerald-700">
-            ระบบนี้เปลี่ยนเป็นการชำระเต็มจำนวน ไม่มีค่ายอดคงเหลือหลังมัดจำ
-          </p>
+          <InfoRow icon={Users} label="พักได้สูงสุด" value={`${room.capacity} คน`} />
+          <InfoRow
+            icon={BedDouble}
+            label="จำนวนห้องทั้งหมด"
+            value={`${room.totalRooms ?? 1} ห้อง`}
+          />
+          <InfoRow
+            icon={Wallet}
+            label="ราคาต่อคืน"
+            value={formatCurrency(room.pricePerNight)}
+          />
+          <InfoRow icon={CalendarDays} label="จำนวนคืน" value={`${nights} คืน`} />
         </div>
       </aside>
+    </div>
+  );
+}
+
+function DateInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-black text-slate-700">
+        {label} <span className="text-red-500">*</span>
+      </label>
+      <div className="relative">
+        <CalendarDays
+          size={20}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <input
+          type="date"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+        />
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  dark,
+}: {
+  label: string;
+  value: string;
+  dark?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-2xl p-4 ring-1",
+        dark ? "bg-slate-950 text-white ring-slate-950" : "bg-white ring-slate-200",
+      ].join(" ")}
+    >
+      <p
+        className={[
+          "text-xs font-bold uppercase tracking-wide",
+          dark ? "text-slate-400" : "text-slate-500",
+        ].join(" ")}
+      >
+        {label}
+      </p>
+      <p className={["mt-1 text-xl font-black", dark ? "text-white" : "text-slate-950"].join(" ")}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
+      <div className="flex items-center gap-2 text-slate-500">
+        <Icon size={18} className="text-slate-500" />
+        <span className="text-sm font-bold text-slate-500">{label}</span>
+      </div>
+      <span className="font-black text-slate-950">{value}</span>
     </div>
   );
 }

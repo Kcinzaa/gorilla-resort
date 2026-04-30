@@ -2,13 +2,7 @@ import { prisma } from "@/lib/prisma";
 import BookingForm from "@/components/BookingForm";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BedDouble,
-  CalendarCheck,
-  Hotel,
-  SearchCheck,
-} from "lucide-react";
+import { ArrowRight, BedDouble, Hotel, SearchCheck } from "lucide-react";
 
 type BookingPageProps = {
   searchParams: Promise<{
@@ -121,41 +115,27 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
       <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
         <Navbar />
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8 lg:p-10">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
-          </div>
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-end">
+        <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6">
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 ring-1 ring-white/10">
-                <CalendarCheck size={16} className="text-slate-200" />
-                <span className="text-slate-200">Booking Request</span>
-              </div>
-
-              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                ยืนยันข้อมูลการจองห้องพัก
-              </h1>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ตรวจสอบห้องที่เลือก เลือกวันที่เข้าพัก กรอกข้อมูลติดต่อ
-                และส่งคำขอจองให้แอดมินรีสอร์ทตรวจสอบ
+              <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+                ห้องที่เลือก
               </p>
+              <h1 className="mt-2 text-3xl font-black text-slate-950">
+                {room.name}
+              </h1>
             </div>
 
-            <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
+            <div className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-950">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white">
                   <BedDouble size={32} />
                 </div>
 
                 <div>
-                  <p className="text-sm font-bold text-slate-300">
-                    ห้องที่เลือก
-                  </p>
-                  <p className="mt-1 text-2xl font-black text-white">
-                    {room.name}
+                  <p className="text-sm font-bold text-slate-500">ราคา/คืน</p>
+                  <p className="mt-1 text-xl font-black text-slate-950">
+                    ฿{room.pricePerNight.toLocaleString("th-TH")}
                   </p>
                 </div>
               </div>
