@@ -261,11 +261,6 @@ export default function MyBookingsPage() {
       .length;
   }, [bookings]);
 
-  const rejectedPaymentCount = useMemo(() => {
-    return bookings.filter((booking) => booking.paymentStatus === "REJECTED")
-      .length;
-  }, [bookings]);
-
   async function fetchBookings(lineUserId: string) {
     try {
       setLoading(true);
@@ -534,9 +529,9 @@ export default function MyBookingsPage() {
               <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
                 <XCircle size={26} className="text-red-600" />
                 <p className="mt-4 text-3xl font-black text-slate-950">
-                  {rejectedPaymentCount}
+                  {cancelledCount}
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">สลิปไม่ถูกต้อง</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">ยืนยันไม่สำเร็จ</p>
               </div>
             </div>
           </div>
