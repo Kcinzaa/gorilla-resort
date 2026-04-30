@@ -11,6 +11,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock3,
+  Download,
   Hotel,
   LayoutDashboard,
   Loader2,
@@ -266,6 +267,95 @@ export default function AdminDashboardPage() {
       })
       .slice(0, 5);
   }, [bookings]);
+
+  const scheduleDates = useMemo(() => {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    return Array.from({ length: 14 }, (_, index) => addDays(start, index));
+  }, []);
+
+  const activeScheduleBookings = useMemo(() => {
+    return bookings.filter((booking) => {
+      return booking.status !== "CANCELLED";
+    });
+  }, [bookings]);
+
+  const occupancyRows = useMemo(() => {
+    return activeRooms.map((room) => {
+      const roomBookings = activeScheduleBookings.filter(
+        (booking) => booking.roomType?.id === room.id
+      );
+
+      const days = scheduleDates.map((date) => {
+        const dayBookings = roomBookings.filter((booking) =>
+          isDateInBooking(date, booking)
+        );
+        const bookedCount = dayBookings.length;
+        const totalRooms = room.totalRooms ?? 1;
+
+        return {
+          date,
+          bookedCount,
+          availableCount: Math.max(totalRooms - bookedCount, 0),
+          bookings: dayBookings,
+        };
+      });
+
+      return {
+        room,
+        days,
+      };
+    });
+  }, [activeRooms, activeScheduleBookings, scheduleDates]);
+
+  function exportBookingsCsv() {
+    const headers = [
+      "Booking Code",
+      "Customer",
+      "Phone",
+      "Room",
+      "Check In",
+      "Check Out",
+      "Guests",
+      "Total Price",
+      "Booking Status",
+      "Payment Status",
+      "Payment Method",
+      "Payment Slip URL",
+      "Created At",
+    ];
+
+    const rows = bookings.map((booking) => [
+      booking.bookingCode || `BOOKING-${booking.id}`,
+      booking.displayName || "",
+      booking.phone || "",
+      booking.roomType?.name || "",
+      booking.checkIn || "",
+      booking.checkOut || "",
+      booking.guests || "",
+      booking.totalPrice || 0,
+      booking.status || "",
+      booking.paymentStatus || "",
+      booking.paymentMethod || "",
+      booking.paymentSlipUrl || "",
+      booking.createdAt || "",
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(csvEscape).join(","))
+      .join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = `resort-bookings-${formatInputDate(new Date())}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function fetchJsonWithFallback(urls: string[]): Promise<FetchResult> {
     for (const url of urls) {
@@ -638,6 +728,149 @@ export default function AdminDashboardPage() {
               </div>
             </section>
 
+            <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
+              <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+                    Room Schedule
+                  </p>
+                  <h2 className="mt-2 text-3xl font-black text-slate-950">
+                    ตารางการจองห้องพัก
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                    ดูสถานะ 14 วันข้างหน้า ว่าห้องประเภทไหนถูกจองแล้วกี่ห้อง
+                    และยังเหลือกี่ห้อง
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={exportBookingsCsv}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
+                  >
+                    <Download size={18} className="text-white" />
+                    <span className="text-white">ส่งออก Excel</span>
+                  </button>
+
+                  <Link
+                    href="/admin/bookings"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                  >
+                    <span className="text-white">ดูรายการจองทั้งหมด</span>
+                    <ArrowRight size={18} className="text-white" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-[1.5rem] ring-1 ring-slate-200">
+                <table className="min-w-[980px] w-full border-collapse bg-white text-left">
+                  <thead>
+                    <tr className="bg-slate-950 text-white">
+                      <th className="sticky left-0 z-10 min-w-56 bg-slate-950 px-4 py-4 text-sm font-black text-white">
+                        ห้องพัก
+                      </th>
+                      {scheduleDates.map((date) => (
+                        <th
+                          key={date.toISOString()}
+                          className="min-w-32 border-l border-white/10 px-3 py-4 text-center text-sm font-black text-white"
+                        >
+                          {formatDateOnly(date)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {occupancyRows.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={scheduleDates.length + 1}
+                          className="px-5 py-10 text-center text-sm font-bold text-slate-500"
+                        >
+                          ยังไม่มีข้อมูลห้องพัก
+                        </td>
+                      </tr>
+                    ) : (
+                      occupancyRows.map(({ room, days }) => (
+                        <tr key={room.id} className="border-t border-slate-200">
+                          <td className="sticky left-0 z-10 bg-white px-4 py-4">
+                            <p className="font-black text-slate-950">
+                              {room.name}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold text-slate-500">
+                              ทั้งหมด {room.totalRooms ?? 1} ห้อง
+                            </p>
+                          </td>
+
+                          {days.map((day) => {
+                            const isFull = day.availableCount <= 0;
+                            const hasBooking = day.bookedCount > 0;
+
+                            return (
+                              <td
+                                key={`${room.id}-${day.date.toISOString()}`}
+                                className="border-l border-slate-200 px-3 py-3 align-top"
+                              >
+                                <div
+                                  className={[
+                                    "min-h-24 rounded-2xl p-3 ring-1",
+                                    isFull
+                                      ? "bg-red-50 ring-red-100"
+                                      : hasBooking
+                                        ? "bg-amber-50 ring-amber-100"
+                                        : "bg-emerald-50 ring-emerald-100",
+                                  ].join(" ")}
+                                >
+                                  <p
+                                    className={[
+                                      "text-sm font-black",
+                                      isFull
+                                        ? "text-red-700"
+                                        : hasBooking
+                                          ? "text-amber-700"
+                                          : "text-emerald-700",
+                                    ].join(" ")}
+                                  >
+                                    {hasBooking
+                                      ? `จอง ${day.bookedCount}`
+                                      : "ว่าง"}
+                                  </p>
+                                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                                    เหลือ {day.availableCount}
+                                  </p>
+
+                                  {day.bookings.slice(0, 2).map((booking) => (
+                                    <div
+                                      key={booking.id}
+                                      className="mt-2 rounded-xl bg-white px-2 py-2 text-xs font-bold text-slate-700 shadow-sm"
+                                    >
+                                      <p className="truncate">
+                                        {booking.displayName || "ลูกค้า"}
+                                      </p>
+                                      <p className="mt-0.5 truncate text-slate-400">
+                                        {booking.status || "PENDING"}
+                                      </p>
+                                    </div>
+                                  ))}
+
+                                  {day.bookings.length > 2 && (
+                                    <p className="mt-2 text-xs font-bold text-slate-500">
+                                      +{day.bookings.length - 2} รายการ
+                                    </p>
+                                  )}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
             <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -935,4 +1168,49 @@ export default function AdminDashboardPage() {
       </section>
     </main>
   );
+}
+
+function formatDateOnly(date: Date) {
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "2-digit",
+    month: "short",
+  }).format(date);
+}
+
+function formatInputDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateOnly(value?: string) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function isDateInBooking(date: Date, booking: BookingItem) {
+  const checkIn = parseDateOnly(booking.checkIn);
+  const checkOut = parseDateOnly(booking.checkOut);
+
+  if (!checkIn || !checkOut) return false;
+
+  return date >= checkIn && date < checkOut;
+}
+
+function csvEscape(value: unknown) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
 }
