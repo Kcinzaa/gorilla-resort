@@ -473,7 +473,7 @@ export default function ResortHomePage() {
 
             <Link
               href="/rooms"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+              className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg"
             >
               <span className="text-slate-950">ดูห้องทั้งหมด</span>
               <ArrowRight size={18} className="text-white" />
@@ -697,7 +697,7 @@ export default function ResortHomePage() {
 
                   <Link
                     href="/booking-menu"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-white text-white transition hover:bg-slate-800"
+                    className="inline-flex min-w-[160px] items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg"
                   >
                     <span className="text-slate-950">ไปเมนูจอง</span>
                     <ChevronRight size={18} className="text-white" />
