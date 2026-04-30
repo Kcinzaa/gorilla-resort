@@ -493,47 +493,6 @@ export default function MyBookingsPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <Clock3 size={26} className="text-amber-600" />
-                <p className="mt-4 text-3xl font-black text-slate-950">
-                  {pendingCount}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">รอตรวจสอบ</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <CheckCircle2 size={26} className="text-emerald-600" />
-                <p className="mt-4 text-3xl font-black text-slate-950">
-                  {confirmedCount}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">ยืนยันแล้ว</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <ReceiptText size={26} className="text-blue-600" />
-                <p className="mt-4 text-3xl font-black text-slate-950">
-                  {waitingPaymentCount}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">แจ้งชำระแล้ว</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <Banknote size={26} className="text-emerald-600" />
-                <p className="mt-4 text-3xl font-black text-slate-950">
-                  {paidCount}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">ชำระแล้ว</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                <XCircle size={26} className="text-red-600" />
-                <p className="mt-4 text-3xl font-black text-slate-950">
-                  {cancelledCount}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">ยืนยันไม่สำเร็จ</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -659,8 +618,8 @@ export default function MyBookingsPage() {
           !loading &&
           !error &&
           bookings.length > 0 && (
-            <section className="mt-5 grid gap-5">
-              <div className="grid gap-5">
+            <section className="mt-5 grid gap-4">
+              <div className="grid gap-3">
                 {bookings.map((booking) => {
                   const statusInfo = getStatusInfo(booking.status);
                   const paymentInfo = getPaymentStatusInfo(
@@ -675,330 +634,92 @@ export default function MyBookingsPage() {
                     booking.checkOut
                   );
 
-                  const pricePerNight = booking.roomType?.pricePerNight || 0;
-
                   const estimatedTotal =
                     booking.totalPrice ||
-                    (nights > 0 ? nights * pricePerNight : 0);
-
-                  const depositAmount =
-                    booking.depositAmount ||
-                    (estimatedTotal > 0
-                      ? Math.max(Math.ceil(estimatedTotal * 0.3), 500)
+                    (nights > 0
+                      ? nights * (booking.roomType?.pricePerNight || 0)
                       : 0);
-
-                  const remainingAmount =
-                    estimatedTotal > 0
-                      ? Math.max(estimatedTotal - depositAmount, 0)
-                      : 0;
 
                   return (
                     <article
                       key={booking.id}
-                      className={[
-                        "overflow-hidden rounded-[2rem] border bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:rounded-[2.5rem]",
-                        statusInfo.cardClass,
-                      ].join(" ")}
+                      className="overflow-hidden rounded-[1.75rem] bg-white shadow-sm ring-1 ring-slate-200"
                     >
-                      <div className="grid lg:grid-cols-[300px_1fr]">
-                        <div className="relative min-h-64 overflow-hidden bg-slate-200">
+                      <div className="grid grid-cols-[112px_1fr] gap-0 sm:grid-cols-[160px_1fr]">
+                        <div className="relative min-h-36 overflow-hidden bg-slate-200">
                           {booking.roomType?.imageUrl ? (
                             <img
                               src={booking.roomType.imageUrl}
                               alt={booking.roomType.name}
-                              className="h-full min-h-64 w-full object-cover"
+                              className="h-full min-h-36 w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-full min-h-64 w-full items-center justify-center text-slate-400">
+                            <div className="flex h-full min-h-36 w-full items-center justify-center text-slate-400">
                               <Hotel size={44} />
                             </div>
                           )}
-
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-
-                          <div
-                            className={[
-                              "absolute left-4 top-4 inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black shadow-sm ring-1",
-                              statusInfo.badgeClass,
-                            ].join(" ")}
-                          >
-                            <StatusIcon size={16} />
-                            {statusInfo.label}
-                          </div>
-
-                          <div
-                            className={[
-                              "absolute right-4 top-4 inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black shadow-sm ring-1",
-                              paymentInfo.badgeClass,
-                            ].join(" ")}
-                          >
-                            <PaymentIcon size={16} />
-                            {paymentInfo.label}
-                          </div>
-
-                          <div className="absolute bottom-4 left-4 right-4">
-                            <p className="text-2xl font-black text-white">
-                              {booking.roomType?.name || "ห้องพัก"}
-                            </p>
-                            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-200">
-                              {booking.roomType?.description ||
-                                "รายการจองห้องพักของคุณ"}
-                            </p>
-                          </div>
                         </div>
 
-                        <div className="p-5 sm:p-6">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Booking Code
+                        <div className="min-w-0 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-lg font-black text-slate-950">
+                                {booking.roomType?.name || "ห้องพัก"}
                               </p>
-                              <h2 className="mt-1 break-all text-2xl font-black text-slate-950">
+                              <p className="mt-1 truncate text-xs font-bold text-slate-500">
                                 {booking.bookingCode || `BOOKING-${booking.id}`}
-                              </h2>
-                            </div>
-
-                            <div className="flex flex-col gap-2 sm:items-end">
-                              <div
-                                className={[
-                                  "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  statusInfo.badgeClass,
-                                ].join(" ")}
-                              >
-                                <StatusIcon size={18} />
-                                {statusInfo.label}
-                              </div>
-
-                              <div
-                                className={[
-                                  "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  paymentInfo.badgeClass,
-                                ].join(" ")}
-                              >
-                                <PaymentIcon size={18} />
-                                {paymentInfo.label}
-                              </div>
-                            </div>
-                          </div>
-
-                          <p className="mt-3 text-sm leading-6 text-slate-500">
-                            {statusInfo.description}
-                          </p>
-
-                          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Check-in
-                              </p>
-                              <p className="mt-1 font-black text-slate-950">
-                                {formatDate(booking.checkIn)}
-                              </p>
-                            </div>
-
-                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Check-out
-                              </p>
-                              <p className="mt-1 font-black text-slate-950">
-                                {formatDate(booking.checkOut)}
-                              </p>
-                            </div>
-
-                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Nights
-                              </p>
-                              <p className="mt-1 font-black text-slate-950">
-                                {nights} คืน
-                              </p>
-                            </div>
-
-                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                Guests
-                              </p>
-                              <p className="mt-1 font-black text-slate-950">
-                                {booking.guests} คน
                               </p>
                             </div>
                           </div>
 
-                          <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_0.95fr]">
-                            <div className="rounded-[1.5rem] bg-slate-950 p-4 text-white">
-                              <div className="flex items-center justify-between gap-4">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                                    ราคารวมโดยประมาณ
-                                  </p>
-                                  <p className="mt-1 text-2xl font-black text-white">
-                                    {estimatedTotal > 0
-                                      ? formatCurrency(estimatedTotal)
-                                      : "-"}
-                                  </p>
-                                  <p className="mt-1 text-xs text-slate-400">
-                                    {nights > 0
-                                      ? `${nights} คืน × ${formatCurrency(
-                                          pricePerNight
-                                        )}`
-                                      : "ยังไม่สามารถคำนวณจำนวนคืนได้"}
-                                  </p>
-                                </div>
-
-                                <Wallet size={26} className="text-white" />
-                              </div>
-                            </div>
-
-                            <div
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <span
                               className={[
-                                "rounded-[1.5rem] border p-4",
-                                paymentInfo.cardClass,
+                                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black ring-1",
+                                statusInfo.badgeClass,
                               ].join(" ")}
                             >
-                              <div className="flex items-start justify-between gap-4">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                    Payment
-                                  </p>
-                                  <p className="mt-1 text-2xl font-black text-slate-950">
-                                    {formatCurrency(depositAmount)}
-                                  </p>
-                                  <p className="mt-1 text-xs leading-5 text-slate-600">
-                                    {paymentInfo.description}
-                                  </p>
-                                </div>
-
-                                <ReceiptText
-                                  size={26}
-                                  className={paymentInfo.iconClass}
-                                />
-                              </div>
-                            </div>
+                              <StatusIcon size={14} />
+                              {statusInfo.label}
+                            </span>
+                            <span
+                              className={[
+                                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black ring-1",
+                                paymentInfo.badgeClass,
+                              ].join(" ")}
+                            >
+                              <PaymentIcon size={14} />
+                              {paymentInfo.label}
+                            </span>
                           </div>
 
-                          <div className="mt-5 rounded-[1.5rem] bg-slate-50 p-4 ring-1 ring-slate-200">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  Payment Details
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                  ข้อมูลการแจ้งโอนเต็มจำนวนที่ส่งให้รีสอร์ท
-                                </p>
-                              </div>
-
-                              <div
-                                className={[
-                                  "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  paymentInfo.badgeClass,
-                                ].join(" ")}
-                              >
-                                <PaymentIcon size={18} />
-                                {paymentInfo.label}
-                              </div>
-                            </div>
-
-                            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  ยอดชำระเต็มจำนวน
-                                </p>
-                                <p className="mt-1 font-black text-slate-950">
-                                  {formatCurrency(depositAmount)}
-                                </p>
-                              </div>
-
-                              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  ยอดคงเหลือ
-                                </p>
-                                <p className="mt-1 font-black text-slate-950">
-                                  {formatCurrency(remainingAmount)}
-                                </p>
-                              </div>
-
-                              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  วิธีชำระเงิน
-                                </p>
-                                <p className="mt-1 font-black text-slate-950">
-                                  {getPaymentMethodLabel(
-                                    booking.paymentMethod
-                                  )}
-                                </p>
-                              </div>
-
-                              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  Paid At
-                                </p>
-                                <p className="mt-1 font-black text-slate-950">
-                                  {formatDateTime(booking.paidAt)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
-                              <div className="hidden" />
-                              {booking.paymentSlipUrl ? (
-                                <a
-                                  href={booking.paymentSlipUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
-                                >
-                                  <span className="text-white">
-                                    เปิดดูสลิป
-                                  </span>
-                                </a>
-                              ) : (
-                                <div className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-500">
-                                  ไม่มีลิงก์สลิป
-                                </div>
-                              )}
-                            </div>
-
-                            {canResubmitPayment(booking) && (
-                              <div className="mt-4 rounded-[1.5rem] border border-red-200 bg-red-50 p-4">
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                  <div>
-                                    <p className="text-base font-black text-red-700">
-                                      ต้องส่งหลักฐานการชำระเงินใหม่
-                                    </p>
-                                    <p className="mt-1 text-sm leading-6 text-red-600">
-                                      สลิปเดิมอาจไม่ถูกต้อง หรือยังไม่ได้แจ้งชำระเงิน
-                                      กรุณาส่งลิงก์สลิป/เลขอ้างอิงใหม่ให้แอดมินตรวจสอบ
-                                    </p>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => openResubmitModal(booking)}
-                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-700"
-                                  >
-                                    <UploadCloud
-                                      size={18}
-                                      className="text-white"
-                                    />
-                                    <span className="text-white">
-                                      ส่งสลิปใหม่
-                                    </span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                          <div className="mt-3 grid gap-1 text-sm text-slate-600">
+                            <p>
+                              <span className="font-bold text-slate-500">
+                                เข้าพัก:
+                              </span>{" "}
+                              {formatDate(booking.checkIn)}
+                            </p>
+                            <p>
+                              <span className="font-bold text-slate-500">
+                                ออก:
+                              </span>{" "}
+                              {formatDate(booking.checkOut)}
+                            </p>
+                            <p className="font-black text-slate-950">
+                              {estimatedTotal > 0
+                                ? formatCurrency(estimatedTotal)
+                                : "-"}
+                            </p>
                           </div>
 
-                          {booking.note && (
-                            <div className="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                หมายเหตุ
-                              </p>
-                              <p className="mt-1 text-sm leading-6 text-slate-600">
-                                {booking.note}
-                              </p>
-                            </div>
-                          )}
-
+                          <Link
+                            href={`/my-bookings/${booking.id}`}
+                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                          >
+                            <span className="text-white">ดูรายละเอียดการจอง</span>
+                            <ArrowRight size={17} className="text-white" />
+                          </Link>
                         </div>
                       </div>
                     </article>
