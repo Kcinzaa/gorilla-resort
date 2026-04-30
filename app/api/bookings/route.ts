@@ -317,7 +317,7 @@ export async function POST(request: Request) {
         paymentMethod,
         paymentSlipUrl,
         paymentReference,
-        paidAt: null,
+        paidAt: new Date(),
       },
       include: {
         roomType: true,
@@ -442,7 +442,7 @@ export async function PATCH(request: Request) {
         paymentMethod,
         paymentSlipUrl,
         paymentReference,
-        paidAt: null,
+        paidAt: new Date(),
       },
       include: {
         roomType: true,

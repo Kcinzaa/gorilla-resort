@@ -859,7 +859,11 @@ export default function AdminBookingsPage() {
                               Paid At
                             </p>
                             <p className="mt-1 font-black text-slate-950">
-                              {formatDateTime(booking.paidAt)}
+                              {formatDateTime(
+                                booking.paidAt ||
+                                  booking.createdAt ||
+                                  booking.updatedAt
+                              )}
                             </p>
                           </div>
                         </div>

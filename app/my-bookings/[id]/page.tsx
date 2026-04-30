@@ -428,7 +428,12 @@ export default function MyBookingDetailPage() {
                     label="วิธีชำระเงิน"
                     value={getPaymentMethodLabel(booking.paymentMethod)}
                   />
-                  <InfoCard label="Paid At" value={formatDateTime(booking.paidAt)} />
+                  <InfoCard
+                    label="Paid At"
+                    value={formatDateTime(
+                      booking.paidAt || booking.createdAt || booking.updatedAt
+                    )}
+                  />
                   <InfoCard
                     label="สถานะ"
                     value={paymentInfo.label}
