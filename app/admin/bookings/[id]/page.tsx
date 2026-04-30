@@ -239,19 +239,10 @@ export default function AdminBookingDetailPage() {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("adminToken");
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const response = await fetch(`/api/admin/bookings/${bookingId}`, {
         method: "GET",
         cache: "no-store",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       const contentType = response.headers.get("content-type") || "";
@@ -285,18 +276,11 @@ export default function AdminBookingDetailPage() {
       setUpdating(true);
       setError("");
 
-      const token = localStorage.getItem("adminToken");
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const response = await fetch(`/api/admin/bookings/${bookingId}`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
@@ -324,8 +308,12 @@ export default function AdminBookingDetailPage() {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("adminToken");
+  async function handleLogout() {
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
     router.push("/admin/login");
     router.refresh();
   }

@@ -145,29 +145,16 @@ export default function AdminRoomsPage() {
     });
   }, [rooms, keyword, statusFilter]);
 
-  function getToken() {
-    return localStorage.getItem("adminToken");
-  }
-
   async function fetchRooms() {
     try {
       setLoading(true);
       setError("");
       setSuccess("");
 
-      const token = getToken();
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const response = await fetch("/api/admin/rooms", {
         method: "GET",
         cache: "no-store",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       const contentType = response.headers.get("content-type") || "";
@@ -258,13 +245,6 @@ export default function AdminRoomsPage() {
     try {
       setSaving(true);
 
-      const token = getToken();
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const payload = {
         id: form.id,
         name: form.name.trim(),
@@ -278,9 +258,9 @@ export default function AdminRoomsPage() {
 
       const response = await fetch("/api/admin/rooms", {
         method: form.id ? "PATCH" : "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -310,18 +290,11 @@ export default function AdminRoomsPage() {
       setError("");
       setSuccess("");
 
-      const token = getToken();
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const response = await fetch("/api/admin/rooms", {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           id: room.id,
@@ -376,22 +349,13 @@ export default function AdminRoomsPage() {
       setError("");
       setSuccess("");
 
-      const token = getToken();
-
-      if (!token) {
-        router.push("/admin/login");
-        return;
-      }
-
       const params = new URLSearchParams({
         id: String(room.id),
       });
 
       const response = await fetch(`/api/admin/rooms?${params.toString()}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -411,8 +375,12 @@ export default function AdminRoomsPage() {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("adminToken");
+  async function handleLogout() {
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
     router.push("/admin/login");
     router.refresh();
   }

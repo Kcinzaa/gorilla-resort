@@ -1,15 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-function isAdmin(request: Request) {
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim();
-
-  const cookie = request.headers.get("cookie") || "";
-  const hasCookieToken = cookie.includes("adminToken=admin-local-session");
-
-  return token === "admin-local-session" || hasCookieToken;
-}
+import { isAdminRequest } from "@/lib/auth";
 
 function cleanString(value: unknown) {
   return String(value || "").trim();
@@ -21,7 +12,7 @@ function cleanNumber(value: unknown) {
 
 export async function GET(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,
@@ -56,7 +47,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,
@@ -148,7 +139,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,
@@ -254,7 +245,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,

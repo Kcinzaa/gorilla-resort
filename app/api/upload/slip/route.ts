@@ -1,6 +1,29 @@
 import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import {
+  hasSupabaseStorageConfig,
+  uploadSupabaseObject,
+} from "@/lib/supabaseStorage";
+
+export const runtime = "nodejs";
+
+function createSafeExtension(file: File) {
+  const fromName = file.name.split(".").pop()?.toLowerCase();
+
+  if (fromName && ["jpg", "jpeg", "png", "webp"].includes(fromName)) {
+    return fromName;
+  }
+
+  if (file.type === "image/png") return "png";
+  if (file.type === "image/webp") return "webp";
+
+  return "jpg";
+}
+
+function createSlipFileName(extension: string) {
+  return `slip-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -50,11 +73,23 @@ export async function POST(request: Request) {
       recursive: true,
     });
 
-    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const extension = createSafeExtension(file);
+    const fileName = createSlipFileName(extension);
 
-    const fileName = `slip-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}.${extension}`;
+    if (hasSupabaseStorageConfig()) {
+      const objectPath = `slips/${new Date().getFullYear()}/${fileName}`;
+      const publicUrl = await uploadSupabaseObject({
+        buffer,
+        contentType: file.type,
+        objectPath,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "อัปโหลดสลิปสำเร็จ",
+        url: publicUrl,
+      });
+    }
 
     const filePath = path.join(uploadDir, fileName);
 

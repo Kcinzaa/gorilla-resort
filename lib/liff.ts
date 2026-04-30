@@ -19,17 +19,36 @@ function getDevProfile(): LineProfile {
   };
 }
 
+function canUseDevProfile() {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_ENABLE_DEV_LINE_PROFILE === "true"
+  );
+}
+
+function getLiffRequiredError() {
+  return new Error(
+    "ยังไม่ได้ตั้งค่า LINE LIFF สำหรับระบบจอง กรุณาตั้งค่า NEXT_PUBLIC_LIFF_ID"
+  );
+}
+
 export async function getLiffProfile(): Promise<LineProfile> {
   try {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
 
-    // ยังไม่มี LIFF ID ให้ใช้ Dev Mode ทันที
     if (!liffId || liffId.trim() === "") {
+      if (!canUseDevProfile()) {
+        throw getLiffRequiredError();
+      }
+
       return getDevProfile();
     }
 
-    // ถ้าเปิดนอก browser ให้ fallback
     if (typeof window === "undefined") {
+      if (!canUseDevProfile()) {
+        throw getLiffRequiredError();
+      }
+
       return getDevProfile();
     }
 
@@ -41,6 +60,11 @@ export async function getLiffProfile(): Promise<LineProfile> {
 
     if (!liff.isLoggedIn()) {
       liff.login();
+
+      if (!canUseDevProfile()) {
+        throw new Error("กำลังพาเข้าสู่ระบบ LINE");
+      }
+
       return getDevProfile();
     }
 
@@ -53,7 +77,10 @@ export async function getLiffProfile(): Promise<LineProfile> {
       isDevMode: false,
     };
   } catch (error) {
-    // สำคัญ: ห้าม throw error เพราะจะทำให้ Next.js overlay เด้ง
+    if (!canUseDevProfile()) {
+      throw error;
+    }
+
     console.warn("LIFF load failed, fallback to dev profile:", error);
 
     return getDevProfile();

@@ -20,8 +20,8 @@ import {
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -63,8 +63,6 @@ export default function AdminLoginPage() {
         setError(result.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
         return;
       }
-
-      localStorage.setItem("adminToken", result.token || "admin-local-session");
 
       router.push("/admin/dashboard");
       router.refresh();
@@ -153,18 +151,18 @@ export default function AdminLoginPage() {
 
               <div className="mt-10 rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
                 <p className="text-sm font-bold text-slate-300">
-                  Default Test Account
+                  Production Credentials
                 </p>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-xs text-slate-400">Username</p>
-                    <p className="mt-1 font-black text-white">admin</p>
+                    <p className="mt-1 font-black text-white">ADMIN_USERNAME</p>
                   </div>
 
                   <div className="rounded-2xl bg-white/10 p-4">
                     <p className="text-xs text-slate-400">Password</p>
-                    <p className="mt-1 font-black text-white">123456</p>
+                    <p className="mt-1 font-black text-white">ADMIN_PASSWORD</p>
                   </div>
                 </div>
               </div>
@@ -216,7 +214,7 @@ export default function AdminLoginPage() {
                     <input
                       value={username}
                       onChange={(event) => setUsername(event.target.value)}
-                      placeholder="admin"
+                      placeholder="Username"
                       className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
                     />
                   </div>
@@ -237,7 +235,7 @@ export default function AdminLoginPage() {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      placeholder="123456"
+                      placeholder="Password"
                       className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-14 text-sm font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
                     />
 

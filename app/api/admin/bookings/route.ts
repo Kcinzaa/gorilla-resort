@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdminRequest } from "@/lib/auth";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "REJECTED";
-
-function isAdmin(request: Request) {
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim();
-
-  const cookie = request.headers.get("cookie") || "";
-  const hasCookieToken = cookie.includes("adminToken=admin-local-session");
-
-  return token === "admin-local-session" || hasCookieToken;
-}
 
 function isValidBookingStatus(status: string): status is BookingStatus {
   return ["PENDING", "CONFIRMED", "CANCELLED"].includes(status);
@@ -24,7 +15,7 @@ function isValidPaymentStatus(status: string): status is PaymentStatus {
 
 export async function GET(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,
@@ -62,7 +53,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    if (!isAdmin(request)) {
+    if (!isAdminRequest(request)) {
       return NextResponse.json(
         {
           success: false,

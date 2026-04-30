@@ -5,6 +5,19 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const { username, password } = body;
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminTokenSecret = process.env.ADMIN_TOKEN_SECRET;
+
+    if (!adminUsername || !adminPassword || !adminTokenSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "ยังไม่ได้ตั้งค่า ADMIN_USERNAME, ADMIN_PASSWORD หรือ ADMIN_TOKEN_SECRET",
+        },
+        { status: 500 }
+      );
+    }
 
     if (!username || !password) {
       return NextResponse.json(
@@ -17,8 +30,8 @@ export async function POST(request: Request) {
     }
 
     if (
-      username !== process.env.ADMIN_USERNAME ||
-      password !== process.env.ADMIN_PASSWORD
+      username !== adminUsername ||
+      password !== adminPassword
     ) {
       return NextResponse.json(
         {
@@ -34,7 +47,7 @@ export async function POST(request: Request) {
       message: "เข้าสู่ระบบสำเร็จ",
     });
 
-    response.cookies.set("admin_token", process.env.ADMIN_TOKEN_SECRET ?? "", {
+    response.cookies.set("admin_token", adminTokenSecret, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

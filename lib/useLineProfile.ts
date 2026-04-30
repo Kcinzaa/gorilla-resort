@@ -11,12 +11,12 @@ type LineProfileWithRole = LineProfile & {
 };
 
 function getProfileWithRole(profile: LineProfile): LineProfileWithRole {
-  const adminLineUserIds = [
-    "test-line-admin-001",
-
-    // อนาคตถ้ามี LINE LIFF จริง ให้เอา LINE userId ของแอดมินมาใส่ตรงนี้
-    // "Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-  ];
+  const adminLineUserIds = (
+    process.env.NEXT_PUBLIC_ADMIN_LINE_USER_IDS || "test-line-admin-001"
+  )
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
 
   const isAdmin = adminLineUserIds.includes(profile.userId);
 
@@ -68,7 +68,12 @@ export function useLineProfile() {
         });
       } catch (err) {
         console.error(err);
-        setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้");
+        setProfile(null);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "ไม่สามารถโหลดข้อมูลผู้ใช้ LINE ได้"
+        );
       } finally {
         setLoading(false);
       }

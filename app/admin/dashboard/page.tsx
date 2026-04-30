@@ -268,18 +268,12 @@ export default function AdminDashboardPage() {
   }, [bookings]);
 
   async function fetchJsonWithFallback(urls: string[]): Promise<FetchResult> {
-    const token = localStorage.getItem("adminToken");
-
     for (const url of urls) {
       try {
         const response = await fetch(url, {
           method: "GET",
           cache: "no-store",
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : {},
+          credentials: "include",
         });
 
         const contentType = response.headers.get("content-type") || "";
@@ -314,16 +308,20 @@ export default function AdminDashboardPage() {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("adminToken");
+      const authResponse = await fetch("/api/admin/me", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const authResult = await authResponse.json();
 
-      if (!token) {
+      if (!authResponse.ok || !authResult.loggedIn) {
         router.push("/admin/login");
         return;
       }
 
       const [bookingResult, roomResult] = await Promise.all([
         fetchJsonWithFallback(["/api/admin/bookings"]),
-        fetchJsonWithFallback(["/api/rooms"]),
+        fetchJsonWithFallback(["/api/admin/rooms"]),
       ]);
 
       setBookings(toArray<BookingItem>(bookingResult));
@@ -336,8 +334,12 @@ export default function AdminDashboardPage() {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("adminToken");
+  async function handleLogout() {
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
     router.push("/admin/login");
     router.refresh();
   }
