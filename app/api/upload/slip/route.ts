@@ -116,6 +116,20 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("UPLOAD SLIP ERROR:", error);
 
+    const message = error instanceof Error ? error.message : "";
+
+    if (message.startsWith("SUPABASE_UPLOAD_FAILED:")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "อัปโหลดสลิปเข้า Supabase Storage ไม่สำเร็จ กรุณาเช็ก SUPABASE_STORAGE_BUCKET และ Service Role Key",
+          detail: message.replace("SUPABASE_UPLOAD_FAILED:", "").trim(),
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
       {
         success: false,
