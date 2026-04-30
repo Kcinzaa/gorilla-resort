@@ -51,7 +51,6 @@ export default function RoomsPage() {
 
   const minPrice = useMemo(() => {
     if (activeRooms.length === 0) return 0;
-
     return Math.min(...activeRooms.map((room) => room.pricePerNight));
   }, [activeRooms]);
 
@@ -147,6 +146,14 @@ export default function RoomsPage() {
                 <p className="mt-1 text-sm text-slate-300">
                   ประเภทห้องเปิดให้จอง
                 </p>
+              </div>
+
+              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
+                <Wallet size={26} className="text-slate-300" />
+                <p className="mt-4 text-3xl font-black text-white">
+                  {minPrice > 0 ? formatCurrency(minPrice) : "-"}
+                </p>
+                <p className="mt-1 text-sm text-slate-300">ราคาเริ่มต้น</p>
               </div>
 
               <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
@@ -317,35 +324,15 @@ export default function RoomsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-[1.5rem] bg-slate-950 p-4 text-white">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold text-slate-400">
-                            ราคาเริ่มต้น
-                          </p>
-                          <p className="mt-1 text-2xl font-black text-white">
-                            {formatCurrency(room.pricePerNight)}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-400">ต่อคืน</p>
-                        </div>
-
-                        <Link
-                          href={`/rooms/${room.id}`}
-                          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 transition hover:bg-white/20"
-                          aria-label={`ดูรายละเอียดห้อง ${room.name}`}
-                        >
-                          <Eye size={26} className="text-white" />
-                        </Link>
-                      </div>
-                    </div>
-
                     <div className="mt-5 grid gap-3">
                       <Link
                         href={`/rooms/${room.id}`}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-800 transition hover:bg-slate-200"
                       >
                         <Eye size={18} className="text-slate-800" />
-                        <span className="text-slate-800">ดูรายละเอียดห้องพัก</span>
+                        <span className="text-slate-800">
+                          ดูรายละเอียดห้องพัก
+                        </span>
                       </Link>
 
                       <div className="grid gap-3 sm:grid-cols-2">
