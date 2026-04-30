@@ -71,6 +71,15 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
       id: roomTypeId,
       isActive: true,
     },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      pricePerNight: true,
+      capacity: true,
+      totalRooms: true,
+      imageUrl: true,
+    },
   });
 
   if (!room) {
