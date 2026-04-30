@@ -151,9 +151,6 @@ export default async function BookingPage({ searchParams }: BookingPageProps) {
           />
         </section>
 
-        <footer className="mt-5 rounded-[2rem] bg-white px-6 py-5 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
-          Booking Request • Resort Booking System
-        </footer>
       </section>
     </main>
   );

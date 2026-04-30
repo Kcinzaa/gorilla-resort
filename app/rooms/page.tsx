@@ -297,7 +297,12 @@ export default function RoomsPage() {
               <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                 <MessageCircle size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">อีเมล</p>
-                <p className="mt-1 font-black text-slate-950">gorillaresort61@gmail.com</p>
+                <a
+                  href="mailto:gorillaresort61@gmail.com"
+                  className="mt-1 block break-all text-sm font-black leading-6 text-slate-950 sm:text-[13px] xl:text-sm"
+                >
+                  gorillaresort61@gmail.com
+                </a>
               </div>
 
               <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
@@ -309,9 +314,6 @@ export default function RoomsPage() {
           </div>
         </section>
 
-        <footer className="mt-5 rounded-[2rem] bg-white px-6 py-5 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
-          Gorilla Resort • Resort Booking System
-        </footer>
       </section>
     </main>
   );
