@@ -107,21 +107,18 @@ export default function BookingForm({
 
   const totalPrice = nights * room.pricePerNight;
 
-  const depositAmount =
-    totalPrice > 0 ? Math.max(Math.ceil(totalPrice * 0.3), 500) : 0;
-
-  const remainingAmount =
-    totalPrice > 0 ? Math.max(totalPrice - depositAmount, 0) : 0;
+  // เปลี่ยนจากค่ามัดจำเป็นชำระเต็มจำนวน
+  const paymentAmount = totalPrice > 0 ? totalPrice : 0;
 
   useEffect(() => {
     async function createQr() {
       try {
-        if (!depositAmount || depositAmount <= 0) {
+        if (!paymentAmount || paymentAmount <= 0) {
           setQrDataUrl("");
           return;
         }
 
-        const payload = generatePromptPayPayload(promptPayId, depositAmount);
+        const payload = generatePromptPayPayload(promptPayId, paymentAmount);
 
         const url = await QRCode.toDataURL(payload, {
           width: 320,
@@ -137,7 +134,7 @@ export default function BookingForm({
     }
 
     createQr();
-  }, [depositAmount, promptPayId]);
+  }, [paymentAmount, promptPayId]);
 
   function clearError() {
     setError("");
@@ -165,7 +162,8 @@ export default function BookingForm({
         return;
       }
 
-      setPaymentSlipUrl(result.url);
+      const uploadedUrl = result.data?.url || result.url || "";
+      setPaymentSlipUrl(uploadedUrl);
     } catch (err) {
       console.warn(err);
       setError("เกิดข้อผิดพลาดในการอัปโหลดสลิป");
@@ -204,6 +202,11 @@ export default function BookingForm({
       return;
     }
 
+    if (paymentAmount <= 0) {
+      setError("ไม่สามารถคำนวณยอดชำระได้ กรุณาเลือกวันที่เข้าพักใหม่");
+      return;
+    }
+
     if (!paymentReference.trim() && !paymentSlipUrl.trim()) {
       setError("กรุณากรอกเลขอ้างอิงการโอน หรือแนบรูปสลิปการชำระเงิน");
       return;
@@ -235,32 +238,35 @@ export default function BookingForm({
           paymentMethod,
           paymentSlipUrl: paymentSlipUrl.trim(),
           paymentReference: paymentReference.trim(),
-          depositAmount,
+
+          // ใช้ชื่อ field เดิมเพื่อให้ backend เดิมไม่พัง
+          // แต่ค่าเป็นยอดเต็มจำนวนแล้ว
+          depositAmount: paymentAmount,
         }),
       });
 
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         setError(result.message || "ไม่สามารถจองห้องพักได้");
         return;
       }
 
       const booking = result.data;
 
-const successParams = new URLSearchParams({
-  bookingCode: booking.bookingCode || "",
-  roomName: booking?.roomType?.name || "",
-  checkIn: booking.checkIn || checkIn,
-  checkOut: booking.checkOut || checkOut,
-  guests: String(booking.guests || guests || ""),
-  totalPrice: String(booking.totalPrice || totalPrice || ""),
-  depositAmount: String(booking.depositAmount || depositAmount || ""),
-  paymentStatus: booking.paymentStatus || "PENDING",
-  status: booking.status || "PENDING",
-});
+      const successParams = new URLSearchParams({
+        bookingCode: booking?.bookingCode || "",
+        roomName: booking?.roomType?.name || room.name || "",
+        checkIn: booking?.checkIn || checkIn,
+        checkOut: booking?.checkOut || checkOut,
+        guests: String(booking?.guests || guests || ""),
+        totalPrice: String(booking?.totalPrice || totalPrice || ""),
+        depositAmount: String(booking?.depositAmount || paymentAmount || ""),
+        paymentStatus: booking?.paymentStatus || "PENDING",
+        status: booking?.status || "PENDING",
+      });
 
-router.push(`/booking/success?${successParams.toString()}`);
+      router.push(`/booking/success?${successParams.toString()}`);
       router.refresh();
     } catch (err) {
       console.error(err);
@@ -287,7 +293,7 @@ router.push(`/booking/success?${successParams.toString()}`);
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-            เลือกวันที่เข้าพัก กรอกข้อมูลผู้เข้าพัก และชำระค่ามัดจำด้วย QR
+            เลือกวันที่เข้าพัก กรอกข้อมูลผู้เข้าพัก และชำระเต็มจำนวนด้วย QR
             พร้อมเพย์ เพื่อส่งคำขอจองให้รีสอร์ทตรวจสอบ
           </p>
         </div>
@@ -390,7 +396,7 @@ router.push(`/booking/success?${successParams.toString()}`);
 
                 <div className="rounded-2xl bg-slate-950 p-4 text-white">
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                    ราคารวม
+                    ยอดชำระทั้งหมด
                   </p>
                   <p className="mt-1 text-xl font-black text-white">
                     {formatCurrency(totalPrice)}
@@ -484,14 +490,16 @@ router.push(`/booking/success?${successParams.toString()}`);
               </div>
 
               <div>
-                <h3 className="font-black text-slate-950">ชำระค่ามัดจำ</h3>
+                <h3 className="font-black text-slate-950">
+                  ชำระเต็มจำนวน
+                </h3>
                 <p className="text-sm text-slate-500">
-                  สแกน QR พร้อมเพย์เพื่อชำระค่ามัดจำ แล้วแนบสลิปการโอน
+                  สแกน QR พร้อมเพย์เพื่อชำระยอดเต็มจำนวน แล้วแนบสลิปการโอน
                 </p>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
                 <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                   ยอดรวม
@@ -503,19 +511,10 @@ router.push(`/booking/success?${successParams.toString()}`);
 
               <div className="rounded-2xl bg-emerald-600 p-4 text-white">
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-100">
-                  ต้องมัดจำ
+                  ต้องชำระ
                 </p>
                 <p className="mt-1 text-xl font-black text-white">
-                  {formatCurrency(depositAmount)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                  ยอดคงเหลือ
-                </p>
-                <p className="mt-1 text-xl font-black text-slate-950">
-                  {formatCurrency(remainingAmount)}
+                  {formatCurrency(paymentAmount)}
                 </p>
               </div>
             </div>
@@ -523,7 +522,7 @@ router.push(`/booking/success?${successParams.toString()}`);
             <div className="mt-5 grid gap-5 lg:grid-cols-[320px_1fr]">
               <div className="rounded-[2rem] bg-white p-4 text-center ring-1 ring-slate-200">
                 <p className="mb-3 text-sm font-black text-slate-950">
-                  QR พร้อมเพย์สำหรับชำระค่ามัดจำ
+                  QR พร้อมเพย์สำหรับชำระเต็มจำนวน
                 </p>
 
                 {qrDataUrl ? (
@@ -534,7 +533,7 @@ router.push(`/booking/success?${successParams.toString()}`);
                   />
                 ) : (
                   <div className="flex h-72 w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-bold text-slate-500">
-                    เลือกวันที่เพื่อคำนวณยอดมัดจำ
+                    เลือกวันที่เพื่อคำนวณยอดชำระ
                   </div>
                 )}
 
@@ -709,7 +708,9 @@ router.push(`/booking/success?${successParams.toString()}`);
             ) : (
               <>
                 <Send size={22} className="text-white" />
-                <span className="text-white">ยืนยันการจองและแจ้งชำระมัดจำ</span>
+                <span className="text-white">
+                  ยืนยันการจองและแจ้งชำระเต็มจำนวน
+                </span>
               </>
             )}
           </button>
@@ -792,7 +793,7 @@ router.push(`/booking/success?${successParams.toString()}`);
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                ราคารวม
+                ยอดชำระเต็มจำนวน
               </p>
               <p className="mt-2 text-4xl font-black text-white">
                 {formatCurrency(totalPrice)}
@@ -812,13 +813,13 @@ router.push(`/booking/success?${successParams.toString()}`);
 
         <div className="mt-5 rounded-[2rem] bg-emerald-50 p-5 ring-1 ring-emerald-100">
           <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-            ค่ามัดจำที่ต้องชำระ
+            ต้องชำระทั้งหมด
           </p>
           <p className="mt-2 text-3xl font-black text-emerald-700">
-            {formatCurrency(depositAmount)}
+            {formatCurrency(paymentAmount)}
           </p>
           <p className="mt-2 text-sm leading-6 text-emerald-700">
-            ยอดคงเหลือหลังมัดจำ {formatCurrency(remainingAmount)}
+            ระบบนี้เปลี่ยนเป็นการชำระเต็มจำนวน ไม่มีค่ายอดคงเหลือหลังมัดจำ
           </p>
         </div>
       </aside>

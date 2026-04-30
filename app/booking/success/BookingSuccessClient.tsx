@@ -170,7 +170,7 @@ export default function BookingSuccessClient() {
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 ระบบได้รับคำขอจองของคุณเรียบร้อยแล้ว กรุณารอแอดมินตรวจสอบข้อมูล
-                ยืนยันห้องพัก และตรวจสอบการชำระค่ามัดจำ
+                ยืนยันห้องพัก และตรวจสอบการชำระเงิน
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

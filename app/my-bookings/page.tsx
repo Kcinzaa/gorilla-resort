@@ -491,7 +491,7 @@ export default function MyBookingsPage() {
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 ตรวจสอบรายการจองล่าสุด ดูสถานะการยืนยัน รายละเอียดห้องพัก
-                วันที่เข้าพัก และสถานะการชำระค่ามัดจำ
+                วันที่เข้าพัก และสถานะการชำระเงิน
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
