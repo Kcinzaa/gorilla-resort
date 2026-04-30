@@ -273,7 +273,7 @@ export default function RoomsPage() {
         </section>
 
         <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="grid gap-6">
             <div>
               <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
                 Contact Resort
@@ -281,31 +281,31 @@ export default function RoomsPage() {
               <h2 className="mt-2 text-3xl font-black text-slate-950">
                 ติดต่อรีสอร์ท
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
+              <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-500">
                 หากต้องการสอบถามรายละเอียดห้องพัก การเดินทาง หรือแจ้งข้อมูลเพิ่มเติมหลังจอง
                 สามารถติดต่อรีสอร์ทได้ตามช่องทางด้านล่าง
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="min-w-0 rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                 <Phone size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">โทร</p>
                 <p className="mt-1 font-black text-slate-950">091 782 5165</p>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+              <div className="min-w-0 rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                 <MessageCircle size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">อีเมล</p>
                 <a
                   href="mailto:gorillaresort61@gmail.com"
-                  className="mt-1 block break-all text-sm font-black leading-6 text-slate-950 sm:text-[13px] xl:text-sm"
+                  className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-sm font-black leading-6 text-slate-950 xl:text-base"
                 >
                   gorillaresort61@gmail.com
                 </a>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+              <div className="min-w-0 rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                 <MapPin size={22} className="text-emerald-600" />
                 <p className="mt-3 text-xs font-bold text-slate-500">ที่ตั้ง</p>
                 <p className="mt-1 font-black text-slate-950">61 , Amphoe Kamphaeng Saen, Thailand, 73140</p>
