@@ -311,9 +311,9 @@ export default function ResortHomePage() {
 
                 <Link
                   href="/rooms"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-2xl"
+                  className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-2xl"
                 >
-                  ดูห้องพัก
+                  <span className="text-slate-950">ดูห้องพัก</span>
                   <BedDouble size={18} className="text-slate-950" />
                 </Link>
 
@@ -475,7 +475,7 @@ export default function ResortHomePage() {
               href="/rooms"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
             >
-              ดูห้องทั้งหมด
+              <span className="text-slate-950">ดูห้องทั้งหมด</span>
               <ArrowRight size={18} className="text-white" />
             </Link>
           </div>
@@ -595,7 +595,7 @@ export default function ResortHomePage() {
               href="/availability"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-slate-100"
             >
-              เช็กห้องว่าง
+              <span className="text-slate-950">เช็กห้องว่าง</span>
               <SearchCheck size={18} className="text-slate-950" />
             </Link>
           </div>
@@ -697,9 +697,9 @@ export default function ResortHomePage() {
 
                   <Link
                     href="/booking-menu"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-4 text-sm font-white text-white transition hover:bg-slate-800"
                   >
-                    ไปเมนูจอง
+                    <span className="text-slate-950">ไปเมนูจอง</span>
                     <ChevronRight size={18} className="text-white" />
                   </Link>
                 </div>
