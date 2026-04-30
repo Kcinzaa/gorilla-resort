@@ -16,7 +16,6 @@ import {
   Loader2,
   MessageCircle,
   ReceiptText,
-  SearchCheck,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -449,7 +448,7 @@ export default function BookingSuccessClient() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              เลือกเมนูที่ต้องการทำต่อหลังส่งคำขอจอง
+              ติดตามสถานะการจอง หรือกลับไปเลือกห้องพักเพิ่มเติม
             </p>
 
             <div className="mt-5 grid gap-3">
@@ -465,35 +464,13 @@ export default function BookingSuccessClient() {
               </Link>
 
               <Link
-                href="/availability"
+                href="/rooms"
                 className="group flex items-center justify-between gap-3 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
               >
-                <span className="text-white">เช็กห้องว่างเพิ่ม</span>
-                <SearchCheck
-                  size={18}
-                  className="text-white transition group-hover:scale-110"
-                />
-              </Link>
-
-              <Link
-                href="/rooms"
-                className="group flex items-center justify-between gap-3 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
-              >
-                <span className="text-slate-700">ดูห้องพักทั้งหมด</span>
-                <BedDouble
-                  size={18}
-                  className="text-slate-700 transition group-hover:scale-110"
-                />
-              </Link>
-
-              <Link
-                href="/rooms"
-                className="group flex items-center justify-between gap-3 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
-              >
-                <span className="text-slate-700">ไปหน้าห้องพัก</span>
+                <span className="text-white">ไปหน้าห้องพัก</span>
                 <Home
                   size={18}
-                  className="text-slate-700 transition group-hover:scale-110"
+                  className="text-white transition group-hover:scale-110"
                 />
               </Link>
             </div>
