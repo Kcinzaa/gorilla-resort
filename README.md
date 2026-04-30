@@ -90,8 +90,6 @@ Set these variables in Vercel before production deploy:
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key, server-side only
 - `SUPABASE_STORAGE_BUCKET`: Storage bucket for payment slips, for example `payment-slips`
 - `SUPABASE_STORAGE_PUBLIC_URL`: optional public base URL for the bucket
-- `PAYMENT_WEBHOOK_SECRET`: secret used by future payment gateway webhooks
-- `AUTO_CONFIRM_BOOKING_ON_PAYMENT`: set to `true` if paid webhooks should confirm bookings automatically
 
 ### LINE LIFF
 
@@ -108,12 +106,6 @@ Uploaded payment slips are stored under `slips/<year>/...`.
 
 For the current UI to preview slip images directly, the bucket or `SUPABASE_STORAGE_PUBLIC_URL` must serve readable image URLs. If you want a private bucket later, add a signed-url image proxy endpoint before switching the bucket to private-only access.
 
-### Payment Automation
+### Payment Flow
 
-PromptPay QR by itself does not provide automatic payment confirmation. The project now includes a generic endpoint at:
-
-```txt
-POST /api/payments/webhook
-```
-
-A future payment provider can call it with `x-payment-webhook-secret`, `bookingCode` or `paymentReference`, and a paid status such as `PAID`, `SUCCESS`, `SUCCEEDED`, or `COMPLETED`.
+The app uses a static PromptPay QR code and slip upload. Customers scan the QR, upload a payment slip, and admins verify the slip manually in `/admin/bookings`.

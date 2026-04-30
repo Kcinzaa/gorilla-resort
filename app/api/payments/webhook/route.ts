@@ -34,6 +34,8 @@ function parsePaidAt(value: unknown) {
 
 export async function POST(request: Request) {
   try {
+    const body = (await request.json()) as PaymentWebhookBody;
+
     const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
@@ -46,7 +48,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as PaymentWebhookBody;
     const secret =
       request.headers.get("x-payment-webhook-secret") ||
       cleanString(body.secret);
@@ -101,9 +102,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const shouldAutoConfirm =
-      process.env.AUTO_CONFIRM_BOOKING_ON_PAYMENT === "true";
-
     const updatedBooking = await prisma.booking.update({
       where: {
         id: booking.id,
@@ -113,7 +111,6 @@ export async function POST(request: Request) {
         paidAt: parsePaidAt(body.paidAt),
         paymentReference:
           paymentReference || body.providerEventId || booking.paymentReference,
-        status: shouldAutoConfirm ? "CONFIRMED" : booking.status,
       },
       include: {
         roomType: true,

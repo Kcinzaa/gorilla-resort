@@ -377,10 +377,7 @@ export default function AdminBookingsPage() {
           booking.id === id
             ? {
                 ...booking,
-                paymentStatus,
-                paidAt:
-                  paymentStatus === "PAID" ? new Date().toISOString() : null,
-                updatedAt: new Date().toISOString(),
+                ...result.data,
               }
             : booking
         )

@@ -261,6 +261,7 @@ export default function BookingSuccessClient() {
                     </span>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
