@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowRight,
-  Banknote,
   BedDouble,
   CalendarCheck,
   CheckCircle2,
@@ -196,10 +195,6 @@ export default function AdminDashboardPage() {
     return bookings.filter((booking) => booking.paymentStatus === "PENDING");
   }, [bookings]);
 
-  const paidBookings = useMemo(() => {
-    return bookings.filter((booking) => booking.paymentStatus === "PAID");
-  }, [bookings]);
-
   const rejectedPaymentBookings = useMemo(() => {
     return bookings.filter((booking) => booking.paymentStatus === "REJECTED");
   }, [bookings]);
@@ -227,12 +222,6 @@ export default function AdminDashboardPage() {
       return sum + (booking.totalPrice || 0);
     }, 0);
   }, [confirmedBookings]);
-
-  const paidDepositTotal = useMemo(() => {
-    return paidBookings.reduce((sum, booking) => {
-      return sum + (booking.depositAmount || 0);
-    }, 0);
-  }, [paidBookings]);
 
   const pendingDepositTotal = useMemo(() => {
     return paymentPendingBookings.reduce((sum, booking) => {
@@ -515,8 +504,7 @@ export default function AdminDashboardPage() {
               </h2>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ตรวจสอบรายการจอง รอตรวจสลิป ยอดมัดจำที่ชำระแล้ว
-                และสถานะห้องพักทั้งหมดในหน้าเดียว
+                ตรวจสอบรายการจอง รอตรวจสลิป และสถานะห้องพักทั้งหมดในหน้าเดียว
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -538,23 +526,13 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3">
               <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
                 <ReceiptText size={28} className="text-amber-300" />
                 <p className="mt-4 text-4xl font-black text-white">
                   {paymentPendingBookings.length}
                 </p>
                 <p className="mt-1 text-sm text-slate-300">รายการรอตรวจสลิป</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Banknote size={28} className="text-emerald-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {formatCurrency(paidDepositTotal)}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">
-                  มัดจำที่ยืนยันแล้ว
-                </p>
               </div>
             </div>
           </div>
@@ -676,22 +654,6 @@ export default function AdminDashboardPage() {
                 </p>
                 <p className="mt-2 text-sm font-bold text-amber-700">
                   {formatCurrency(pendingDepositTotal)}
-                </p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-                  <Banknote size={28} className="text-emerald-600" />
-                </div>
-
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  มัดจำที่ชำระแล้ว
-                </p>
-                <p className="mt-2 text-3xl font-black text-slate-950">
-                  {formatCurrency(paidDepositTotal)}
-                </p>
-                <p className="mt-2 text-sm font-bold text-emerald-700">
-                  {paidBookings.length} รายการ
                 </p>
               </div>
 
