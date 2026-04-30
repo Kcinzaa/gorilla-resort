@@ -86,6 +86,7 @@ export default function BookingForm({
 
   const [paymentMethod, setPaymentMethod] = useState("PROMPTPAY");
   const [paymentSlipUrl, setPaymentSlipUrl] = useState("");
+  const [selectedSlipFile, setSelectedSlipFile] = useState<File | null>(null);
 
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [slipUploading, setSlipUploading] = useState(false);
@@ -139,8 +140,8 @@ export default function BookingForm({
     setError("");
   }
 
-  async function handleSlipUpload(file?: File) {
-    if (!file) return;
+  async function uploadSlipFile(file: File) {
+    if (!file) return "";
 
     try {
       setSlipUploading(true);
@@ -158,17 +159,36 @@ export default function BookingForm({
 
       if (!response.ok || !result.success) {
         setError(result.message || "อัปโหลดสลิปไม่สำเร็จ");
-        return;
+        return "";
       }
 
       const uploadedUrl = result.data?.url || result.url || "";
+      if (!uploadedUrl) {
+        setError("อัปโหลดสลิปแล้ว แต่ระบบไม่ได้รับ URL ของไฟล์");
+        return "";
+      }
+
       setPaymentSlipUrl(uploadedUrl);
+      return uploadedUrl;
     } catch (err) {
       console.warn(err);
       setError("เกิดข้อผิดพลาดในการอัปโหลดสลิป");
+      return "";
     } finally {
       setSlipUploading(false);
     }
+  }
+
+  async function handleSlipUpload(file?: File) {
+    setPaymentSlipUrl("");
+
+    if (!file) {
+      setSelectedSlipFile(null);
+      return;
+    }
+
+    setSelectedSlipFile(file);
+    await uploadSlipFile(file);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -206,11 +226,6 @@ export default function BookingForm({
       return;
     }
 
-    if (!paymentSlipUrl.trim()) {
-      setError("กรุณาแนบรูปสลิปการชำระเงิน");
-      return;
-    }
-
     if (!profile) {
       setError("ไม่พบข้อมูลผู้ใช้ LINE กรุณาลองโหลดหน้าใหม่อีกครั้ง");
       return;
@@ -218,6 +233,21 @@ export default function BookingForm({
 
     try {
       setLoading(true);
+
+      let submittedSlipUrl = paymentSlipUrl.trim();
+
+      if (!submittedSlipUrl && selectedSlipFile) {
+        submittedSlipUrl = await uploadSlipFile(selectedSlipFile);
+
+        if (!submittedSlipUrl) {
+          return;
+        }
+      }
+
+      if (!submittedSlipUrl) {
+        setError("กรุณาแนบรูปสลิปการชำระเงิน และรอให้อัปโหลดสำเร็จก่อน");
+        return;
+      }
 
       const response = await fetch("/api/bookings", {
         method: "POST",
@@ -235,7 +265,7 @@ export default function BookingForm({
           phone: phone.trim(),
           note: note.trim(),
           paymentMethod,
-          paymentSlipUrl: paymentSlipUrl.trim(),
+          paymentSlipUrl: submittedSlipUrl,
           paymentReference: "",
 
           // ใช้ชื่อ field เดิมเพื่อให้ backend เดิมไม่พัง
@@ -616,6 +646,18 @@ export default function BookingForm({
                     <div className="mt-3 flex items-center gap-2 text-sm font-bold text-slate-500">
                       <Loader2 size={18} className="animate-spin" />
                       กำลังอัปโหลดสลิป...
+                    </div>
+                  )}
+
+                  {!slipUploading && selectedSlipFile && !paymentSlipUrl && (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+                      เลือกไฟล์แล้ว กรุณารอสักครู่หรือกดส่งอีกครั้งเพื่ออัปโหลดสลิป
+                    </div>
+                  )}
+
+                  {!slipUploading && paymentSlipUrl && (
+                    <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                      อัปโหลดสลิปสำเร็จแล้ว
                     </div>
                   )}
 
