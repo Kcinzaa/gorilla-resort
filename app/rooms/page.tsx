@@ -9,6 +9,7 @@ import {
   BedDouble,
   CalendarCheck,
   CheckCircle2,
+  Eye,
   Hotel,
   ImageIcon,
   Loader2,
@@ -64,9 +65,16 @@ export default function RoomsPage() {
         cache: "no-store",
       });
 
+      const contentType = response.headers.get("content-type") || "";
+
+      if (!contentType.includes("application/json")) {
+        setError("API /api/rooms ไม่ได้ส่ง JSON กลับมา");
+        return;
+      }
+
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         setError(result.message || "ไม่สามารถโหลดข้อมูลห้องพักได้");
         return;
       }
@@ -121,7 +129,7 @@ export default function RoomsPage() {
                 </Link>
 
                 <Link
-                  href="/"
+                  href="/booking-menu"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
                 >
                   <span className="text-slate-950">กลับหน้าเมนูจอง</span>
@@ -223,7 +231,7 @@ export default function RoomsPage() {
               </p>
 
               <Link
-                href="/"
+                href="/booking-menu"
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
               >
                 <span className="text-white">กลับหน้าเมนูจอง</span>
@@ -239,44 +247,50 @@ export default function RoomsPage() {
                   key={room.id}
                   className="group overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:rounded-[2.5rem]"
                 >
-                  <div className="relative h-64 overflow-hidden bg-slate-200">
-                    {room.imageUrl ? (
-                      <img
-                        src={room.imageUrl}
-                        alt={room.name}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-slate-400">
-                        <ImageIcon size={44} />
+                  <Link
+                    href={`/rooms/${room.id}`}
+                    className="block"
+                    aria-label={`ดูรายละเอียดห้อง ${room.name}`}
+                  >
+                    <div className="relative h-64 overflow-hidden bg-slate-200">
+                      {room.imageUrl ? (
+                        <img
+                          src={room.imageUrl}
+                          alt={room.name}
+                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
+                          <ImageIcon size={44} />
+                        </div>
+                      )}
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+
+                      <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-2xl bg-white/90 px-3 py-2 text-xs font-black text-slate-700 shadow-sm backdrop-blur">
+                        <BedDouble size={15} className="text-slate-700" />
+                        <span>Room Type</span>
                       </div>
-                    )}
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      <div className="absolute right-4 top-4 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
+                        เปิดให้จอง
+                      </div>
 
-                    <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-2xl bg-white/90 px-3 py-2 text-xs font-black text-slate-700 shadow-sm backdrop-blur">
-                      <BedDouble size={15} className="text-slate-700" />
-                      <span>Room Type</span>
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h2 className="text-3xl font-black text-white">
+                          {room.name}
+                        </h2>
+
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-200">
+                          {room.description ||
+                            "ห้องพักบรรยากาศดี เหมาะสำหรับการพักผ่อน"}
+                        </p>
+                      </div>
                     </div>
-
-                    <div className="absolute right-4 top-4 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
-                      เปิดให้จอง
-                    </div>
-
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h2 className="text-3xl font-black text-white">
-                        {room.name}
-                      </h2>
-
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-200">
-                        {room.description ||
-                          "ห้องพักบรรยากาศดี เหมาะสำหรับการพักผ่อน"}
-                      </p>
-                    </div>
-                  </div>
+                  </Link>
 
                   <div className="p-5">
                     <div className="grid grid-cols-3 gap-3">
@@ -323,28 +337,42 @@ export default function RoomsPage() {
                           <p className="mt-1 text-xs text-slate-400">ต่อคืน</p>
                         </div>
 
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
-                          <Sparkles size={26} className="text-white" />
-                        </div>
+                        <Link
+                          href={`/rooms/${room.id}`}
+                          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 transition hover:bg-white/20"
+                          aria-label={`ดูรายละเอียดห้อง ${room.name}`}
+                        >
+                          <Eye size={26} className="text-white" />
+                        </Link>
                       </div>
                     </div>
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-5 grid gap-3">
                       <Link
-                        href={`/booking?roomTypeId=${room.id}`}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                        href={`/rooms/${room.id}`}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-800 transition hover:bg-slate-200"
                       >
-                        <span className="text-white">จองห้องนี้</span>
-                        <ArrowRight size={18} className="text-white" />
+                        <Eye size={18} className="text-slate-800" />
+                        <span className="text-slate-800">ดูรายละเอียดห้องพัก</span>
                       </Link>
 
-                      <Link
-                        href={`/availability`}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                      >
-                        <span className="text-white">เช็กวันว่าง</span>
-                        <SearchCheck size={18} className="text-white" />
-                      </Link>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Link
+                          href={`/booking?roomTypeId=${room.id}`}
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                        >
+                          <span className="text-white">จองห้องนี้</span>
+                          <ArrowRight size={18} className="text-white" />
+                        </Link>
+
+                        <Link
+                          href="/availability"
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
+                        >
+                          <span className="text-white">เช็กวันว่าง</span>
+                          <SearchCheck size={18} className="text-white" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </article>
