@@ -87,6 +87,7 @@ export default function BookingForm({
   const [paymentMethod, setPaymentMethod] = useState("PROMPTPAY");
   const [paymentSlipUrl, setPaymentSlipUrl] = useState("");
   const [selectedSlipFile, setSelectedSlipFile] = useState<File | null>(null);
+  const [localSlipDataUrl, setLocalSlipDataUrl] = useState("");
 
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [slipUploading, setSlipUploading] = useState(false);
@@ -140,6 +141,16 @@ export default function BookingForm({
     setError("");
   }
 
+  function readFileAsDataUrl(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function uploadSlipFile(file: File) {
     if (!file) return "";
 
@@ -181,6 +192,7 @@ export default function BookingForm({
 
   async function handleSlipUpload(file?: File) {
     setPaymentSlipUrl("");
+    setLocalSlipDataUrl("");
 
     if (!file) {
       setSelectedSlipFile(null);
@@ -188,7 +200,22 @@ export default function BookingForm({
     }
 
     setSelectedSlipFile(file);
-    await uploadSlipFile(file);
+    clearError();
+
+    let previewDataUrl = "";
+
+    try {
+      previewDataUrl = await readFileAsDataUrl(file);
+      setLocalSlipDataUrl(previewDataUrl);
+    } catch (err) {
+      console.warn("Create local slip preview failed:", err);
+    }
+
+    const uploadedUrl = await uploadSlipFile(file);
+
+    if (!uploadedUrl && previewDataUrl) {
+      setError("");
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -240,7 +267,8 @@ export default function BookingForm({
         submittedSlipUrl = await uploadSlipFile(selectedSlipFile);
 
         if (!submittedSlipUrl) {
-          return;
+          submittedSlipUrl = localSlipDataUrl;
+          setError("");
         }
       }
 
@@ -651,7 +679,7 @@ export default function BookingForm({
 
                   {!slipUploading && selectedSlipFile && !paymentSlipUrl && (
                     <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
-                      เลือกไฟล์แล้ว กรุณารอสักครู่หรือกดส่งอีกครั้งเพื่ออัปโหลดสลิป
+                      เลือกไฟล์แล้ว ถ้าอัปโหลดขึ้น storage ไม่ผ่าน ระบบจะส่งสลิปนี้พร้อมคำขอจองให้แอดมินตรวจสอบ
                     </div>
                   )}
 
@@ -661,21 +689,23 @@ export default function BookingForm({
                     </div>
                   )}
 
-                  {paymentSlipUrl && (
+                  {(paymentSlipUrl || localSlipDataUrl) && (
                     <div className="mt-4 overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-slate-200">
                       <p className="mb-3 text-sm font-black text-slate-700">
                         ตัวอย่างสลิปที่อัปโหลด
                       </p>
 
                       <img
-                        src={paymentSlipUrl}
+                        src={paymentSlipUrl || localSlipDataUrl}
                         alt="Payment slip"
                         className="max-h-80 w-full rounded-xl object-contain"
                       />
 
-                      <p className="mt-3 break-all text-xs font-semibold text-slate-500">
-                        {paymentSlipUrl}
-                      </p>
+                      {paymentSlipUrl && (
+                        <p className="mt-3 break-all text-xs font-semibold text-slate-500">
+                          {paymentSlipUrl}
+                        </p>
+                      )}
                     </div>
                   )}
 
