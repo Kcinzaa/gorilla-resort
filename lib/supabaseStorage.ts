@@ -8,11 +8,15 @@ function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, "");
 }
 
+function cleanEnvValue(value?: string) {
+  return (value || "").trim().replace(/^["']|["']$/g, "");
+}
+
 export function hasSupabaseStorageConfig() {
   return Boolean(
-    process.env.SUPABASE_URL &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      process.env.SUPABASE_STORAGE_BUCKET
+    cleanEnvValue(process.env.SUPABASE_URL) &&
+      cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+      cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET)
   );
 }
 
@@ -21,9 +25,9 @@ export async function uploadSupabaseObject({
   contentType,
   objectPath,
 }: UploadSupabaseObjectParams) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+  const supabaseUrl = cleanEnvValue(process.env.SUPABASE_URL);
+  const serviceRoleKey = cleanEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const bucket = cleanEnvValue(process.env.SUPABASE_STORAGE_BUCKET);
 
   if (!supabaseUrl || !serviceRoleKey || !bucket) {
     throw new Error("SUPABASE_STORAGE_NOT_CONFIGURED");
@@ -51,7 +55,7 @@ export async function uploadSupabaseObject({
   }
 
   const publicBaseUrl =
-    process.env.SUPABASE_STORAGE_PUBLIC_URL ||
+    cleanEnvValue(process.env.SUPABASE_STORAGE_PUBLIC_URL) ||
     `${baseUrl}/storage/v1/object/public/${bucket}`;
 
   return `${trimTrailingSlash(publicBaseUrl)}/${objectPath}`;

@@ -159,7 +159,11 @@ export default function BookingForm({
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        setError(result.message || "อัปโหลดสลิปไม่สำเร็จ");
+        setError(
+          result.detail
+            ? `${result.message || "อัปโหลดสลิปไม่สำเร็จ"}: ${result.detail}`
+            : result.message || "อัปโหลดสลิปไม่สำเร็จ"
+        );
         return "";
       }
 
