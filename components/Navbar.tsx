@@ -34,7 +34,7 @@ const navItems = [
     icon: Hotel,
   },
   {
-    label: "เช็กห้องว่าง",
+    label: "เช็คห้องว่าง",
     href: "/availability",
     icon: SearchCheck,
   },

@@ -771,7 +771,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
 
             <div className="relative min-h-[300px] overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=90"
+                src="https://i.ibb.co/WpWPXZzm/FD4893-A8-5-C5-A-4668-831-F-1-A584-F3-E7633.jpg"
                 alt="Resort room"
                 className="h-full min-h-[300px] w-full object-cover"
               />

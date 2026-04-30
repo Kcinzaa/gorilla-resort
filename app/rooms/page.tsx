@@ -116,7 +116,7 @@ export default function RoomsPage() {
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 ดูรายละเอียดประเภทห้องพัก ราคา จำนวนผู้เข้าพัก และกดจองได้ทันที
-                หรือเลือกเช็กห้องว่างตามวันที่ต้องการก่อนจองจริง
+                หรือเลือกเช็คห้องว่างตามวันที่ต้องการก่อนจองจริง
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -124,7 +124,7 @@ export default function RoomsPage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
-                  <span className="text-white">เช็กห้องว่างก่อนจอง</span>
+                  <span className="text-white">เช็คห้องว่างก่อนจอง</span>
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -393,7 +393,7 @@ export default function RoomsPage() {
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-500">
-              หากยังไม่แน่ใจว่าห้องไหนว่างในวันที่ต้องการ แนะนำให้กดเช็กห้องว่างก่อน
+              หากยังไม่แน่ใจว่าห้องไหนว่างในวันที่ต้องการ แนะนำให้กดเช็คห้องว่างก่อน
               ระบบจะแสดงจำนวนห้องว่างของแต่ละประเภทตามช่วงวันที่เลือก
             </p>
 
@@ -401,7 +401,7 @@ export default function RoomsPage() {
               href="/availability"
               className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
             >
-              <span className="text-white">ไปหน้าเช็กห้องว่าง</span>
+              <span className="text-white">ไปหน้าเช็คห้องว่าง</span>
               <SearchCheck size={18} className="text-white" />
             </Link>
           </div>

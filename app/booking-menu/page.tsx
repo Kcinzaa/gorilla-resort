@@ -18,12 +18,12 @@ import {
 
 const mainActions = [
   {
-    title: "เช็กห้องว่าง",
+    title: "เช็คห้องว่าง",
     description: "เลือกวันที่เข้าพักและวันที่ออก เพื่อดูห้องที่ยังว่าง",
     href: "/availability",
-    icon: SearchCheck,
+    icon: SearchCheck,  
     badge: "แนะนำ",
-    buttonText: "ไปหน้าเช็กห้องว่าง",
+    buttonText: "ไปหน้าเช็คห้องว่าง",
     cardClass: "bg-emerald-50 ring-emerald-100",
     iconClass: "bg-emerald-600 text-white",
     buttonClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
@@ -54,7 +54,7 @@ const mainActions = [
 
 const features = [
   {
-    title: "เช็กห้องว่างก่อนจอง",
+    title: "เช็คห้องว่างก่อนจอง",
     description: "เลือกวันที่เข้าพักและดูจำนวนห้องว่างของแต่ละประเภทได้ทันที",
     icon: SearchCheck,
   },
@@ -77,7 +77,7 @@ const features = [
 
 const steps = [
   {
-    title: "เช็กห้องว่าง",
+    title: "เช็คห้องว่าง",
     description: "เลือกวันเข้าพักและวันออกก่อน เพื่อดูห้องที่ยังจองได้",
     icon: SearchCheck,
   },
@@ -145,7 +145,7 @@ export default function BookingMenuPage() {
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                เลือกห้องพัก ตรวจสอบราคา เช็กห้องว่าง กรอกข้อมูล
+                เลือกห้องพัก ตรวจสอบราคา เช็คห้องว่าง กรอกข้อมูล
                 และติดตามสถานะการจองได้ในระบบเดียว เหมาะสำหรับลูกค้าที่เปิดเว็บผ่าน LINE OA และ LIFF
               </p>
 
@@ -175,7 +175,7 @@ export default function BookingMenuPage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
                 >
-                  <span className="text-white">เช็กห้องว่าง</span>
+                  <span className="text-white">เช็คห้องว่าง</span>
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -287,7 +287,7 @@ export default function BookingMenuPage() {
 
             <p className="mt-3 text-sm leading-7 text-slate-500">
               ระบบนี้ออกแบบให้ลูกค้าจองง่าย และให้แอดมินตรวจสอบได้สะดวก
-              โดยเริ่มจากการเช็กห้องว่างก่อนจองจริง
+              โดยเริ่มจากการเช็คห้องว่างก่อนจองจริง
             </p>
 
             <div className="mt-6 rounded-[2rem] bg-slate-950 p-5 text-white">
@@ -359,7 +359,7 @@ export default function BookingMenuPage() {
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  รวมเครื่องมือหลักที่ลูกค้าต้องใช้ ตั้งแต่ดูห้อง เช็กห้องว่าง
+                  รวมเครื่องมือหลักที่ลูกค้าต้องใช้ ตั้งแต่ดูห้อง เช็คห้องว่าง
                   จนถึงดูรายการจอง
                 </p>
               </div>
@@ -375,7 +375,7 @@ export default function BookingMenuPage() {
                 className="rounded-3xl bg-emerald-50 p-5 ring-1 ring-emerald-100 transition hover:bg-emerald-100"
               >
                 <SearchCheck size={26} className="text-emerald-600" />
-                <p className="mt-4 font-black text-slate-950">เช็กห้องว่าง</p>
+                <p className="mt-4 font-black text-slate-950">เช็คห้องว่าง</p>
                 <p className="mt-1 text-sm text-slate-500">ตามวันที่เลือก</p>
               </Link>
 

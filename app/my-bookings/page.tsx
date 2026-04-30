@@ -499,7 +499,7 @@ export default function MyBookingsPage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
-                  <span className="text-white">เช็กห้องว่างเพิ่ม</span>
+                  <span className="text-white">เช็คห้องว่างเพิ่ม</span>
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -667,7 +667,7 @@ export default function MyBookingsPage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
-                  <span className="text-white">เช็กห้องว่าง</span>
+                  <span className="text-white">เช็คห้องว่าง</span>
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -1190,7 +1190,7 @@ export default function MyBookingsPage() {
                   className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
                   <SearchCheck size={18} className="text-white" />
-                  <span className="text-white">เช็กห้องว่างเพิ่ม</span>
+                  <span className="text-white">เช็คห้องว่างเพิ่ม</span>
                 </Link>
               </aside>
             </section>

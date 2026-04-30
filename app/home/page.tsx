@@ -47,7 +47,7 @@ const resortLocation = "ใส่ที่อยู่รีสอร์ทข�
 const heroImages = [
   {
     image:
-      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1900&q=90",
+      "https://i.ibb.co/ymbcvNWM/0-E9-BD4-C9-80-FD-42-F6-8294-F5-A792-F9-BC51.jpg",
     tag: "Nature Retreat",
     title: "พักใจกลางธรรมชาติ",
     description:
@@ -55,15 +55,15 @@ const heroImages = [
   },
   {
     image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1900&q=90",
+      "https://i.ibb.co/nq89mV9d/F552-ED55-2-C39-4-FC9-9125-BE0-F2-CC575-FB.jpg",
     tag: "Private Stay",
     title: "ห้องพักส่วนตัว บรรยากาศสงบ",
     description:
-      "เลือกห้องที่เหมาะกับคุณ เช็กห้องว่าง และส่งคำขอจองออนไลน์ได้ในไม่กี่ขั้นตอน",
+      "เลือกห้องที่เหมาะกับคุณ เช็คห้องว่าง และส่งคำขอจองออนไลน์ได้ในไม่กี่ขั้นตอน",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1900&q=90",
+      "https://i.ibb.co/hxkt2t60/DB5-B7-FFF-8-EE4-448-E-B5-B8-7-CED9-A9-E3-E70.jpg",
     tag: "Slow Morning",
     title: "เช้าที่ช้าลง และสบายกว่าเดิม",
     description:
@@ -80,7 +80,7 @@ const quickStats = [
   },
   {
     value: "Online",
-    label: "เช็กห้องว่าง",
+    label: "เช็คห้องว่าง",
     description: "ตรวจสอบวันเข้าพักและห้องว่างได้ทันที",
     icon: SearchCheck,
   },
@@ -106,7 +106,7 @@ const highlights = [
     icon: Trees,
   },
   {
-    title: "เช็กห้องว่างออนไลน์",
+    title: "เช็คห้องว่างออนไลน์",
     description:
       "เลือกวันเข้าพักและวันออก ระบบจะแสดงจำนวนห้องว่างให้ทันที",
     icon: SearchCheck,
@@ -122,9 +122,9 @@ const highlights = [
 const galleryItems = [
   {
     title: "วิวธรรมชาติ",
-    description: "พื้นที่เปิดโล่งสำหรับพักใจและใช้เวลาร่วมกัน",
+    description: "พื้นที่เปิดโล่งสำหรับพักใจ",
     image:
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1400&q=90",
+      "https://i.ibb.co/hxkt2t60/DB5-B7-FFF-8-EE4-448-E-B5-B8-7-CED9-A9-E3-E70.jpg",
     icon: Mountain,
     className: "md:col-span-2 md:row-span-2",
   },
@@ -132,7 +132,7 @@ const galleryItems = [
     title: "มุมกาแฟยามเช้า",
     description: "เริ่มเช้าวันหยุดแบบไม่ต้องเร่งรีบ",
     image:
-      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1000&q=90",
+      "https://i.ibb.co/fzXnrC21/484517279-1067930825351952-7908157419749591384-n.jpg",
     icon: Coffee,
     className: "",
   },
@@ -140,15 +140,15 @@ const galleryItems = [
     title: "พื้นที่พักผ่อน",
     description: "นั่งเล่น อ่านหนังสือ หรือคุยกันยาว ๆ",
     image:
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1000&q=90",
+      "https://i.ibb.co/DDkJDMQg/484363126-1067178352093866-4247752501817172646-n.jpg",
     icon: Waves,
     className: "",
   },
   {
-    title: "บ้านพักส่วนตัว",
+    title: "ห้องพักส่วนตัว",
     description: "พื้นที่เรียบง่าย อบอุ่น และเป็นส่วนตัว",
     image:
-      "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1400&q=90",
+      "https://i.ibb.co/5WxTg6Vq/2-BA82-E62-F423-43-C0-AC26-C5941-C2-D2068.jpg",
     icon: Hotel,
     className: "md:col-span-2",
   },
@@ -305,7 +305,7 @@ export default function ResortHomePage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-emerald-950/20 transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-2xl"
                 >
-                  เช็กห้องว่าง
+                  เช็คห้องว่าง
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -407,7 +407,7 @@ export default function ResortHomePage() {
                         เริ่มจองได้ทันที
                       </p>
                       <p className="mt-1 text-xs leading-5 text-slate-300">
-                        เช็กห้องว่าง เลือกห้อง และส่งคำขอจองออนไลน์ได้ในไม่กี่ขั้นตอน
+                        เช็คห้องว่าง เลือกห้อง และส่งคำขอจองออนไลน์ได้ในไม่กี่ขั้นตอน
                       </p>
                     </div>
                   </div>
@@ -587,7 +587,7 @@ export default function ResortHomePage() {
                 บรรยากาศรอบรีสอร์ท
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
-                ภาพรวมที่จะช่วยให้ลูกค้ารู้สึกถึงสถานที่ ก่อนเริ่มเช็กห้องว่างและส่งคำขอจอง
+                ภาพรวมที่จะช่วยให้ลูกค้ารู้สึกถึงสถานที่ ก่อนเริ่มเช็คห้องว่างและส่งคำขอจอง
               </p>
             </div>
 
@@ -595,7 +595,7 @@ export default function ResortHomePage() {
               href="/availability"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-slate-100"
             >
-              <span className="text-slate-950">เช็กห้องว่าง</span>
+              <span className="text-slate-950">เช็คห้องว่าง</span>
               <SearchCheck size={18} className="text-slate-950" />
             </Link>
           </div>
@@ -679,7 +679,7 @@ export default function ResortHomePage() {
                   Contact
                 </p>
                 <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
-                  พร้อมพักผ่อนแล้ว เริ่มเช็กห้องว่างได้เลย
+                  พร้อมพักผ่อนแล้ว เริ่มเช็คห้องว่างได้เลย
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-500">
                   ลูกค้าสามารถเลือกวันเข้าพัก ดูห้องว่าง และส่งคำขอจองผ่านระบบได้ทันที
@@ -691,7 +691,7 @@ export default function ResortHomePage() {
                     href="/availability"
                     className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                   >
-                    เช็กห้องว่าง
+                    เช็คห้องว่าง
                     <CalendarDays size={18} className="text-white" />
                   </Link>
 
@@ -753,7 +753,7 @@ export default function ResortHomePage() {
               </h2>
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-                กดเช็กห้องว่าง เลือกวันที่ต้องการ และส่งคำขอจองได้ทันที
+                กดเช็คห้องว่าง เลือกวันที่ต้องการ และส่งคำขอจองได้ทันที
                 ระบบจะช่วยให้ลูกค้าติดตามสถานะได้ง่ายขึ้น
               </p>
 
@@ -762,7 +762,7 @@ export default function ResortHomePage() {
                   href="/availability"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
-                  เริ่มเช็กห้องว่าง
+                  เริ่มเช็คห้องว่าง
                   <SearchCheck size={18} className="text-white" />
                 </Link>
 
@@ -778,7 +778,7 @@ export default function ResortHomePage() {
 
             <div className="relative min-h-[300px] overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=90"
+                src="https://i.ibb.co/WpWPXZzm/FD4893-A8-5-C5-A-4668-831-F-1-A584-F3-E7633.jpg"
                 alt="Resort room"
                 className="h-full min-h-[300px] w-full object-cover"
               />
