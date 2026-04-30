@@ -45,7 +45,6 @@ type BookingItem = {
   createdAt?: string;
   updatedAt?: string;
 
-  depositAmount?: number | null;
   paymentStatus?: PaymentStatus | string | null;
   paymentMethod?: string | null;
   paymentSlipUrl?: string | null;
@@ -418,7 +417,7 @@ export default function AdminBookingsPage() {
                   Admin Bookings
                 </h1>
                 <p className="text-sm text-slate-500">
-                  จัดการรายการจองและตรวจสอบค่ามัดจำ
+                  จัดการรายการจองและตรวจสอบการชำระเงิน
                 </p>
               </div>
             </div>
@@ -482,12 +481,12 @@ export default function AdminBookingsPage() {
               </div>
 
               <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                ตรวจสอบรายการจองและค่ามัดจำ
+                ตรวจสอบรายการจองและการชำระเงิน
               </h2>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 ดูรายการจองล่าสุด ตรวจสอบข้อมูลลูกค้า วันที่เข้าพัก ห้องพักที่เลือก
-                อัปเดตสถานะการจอง และตรวจสอบสลิปค่ามัดจำ
+                อัปเดตสถานะการจอง และตรวจสอบสลิปชำระเงิน
               </p>
             </div>
 
@@ -651,17 +650,6 @@ export default function AdminBookingsPage() {
               const estimatedTotal =
                 booking.totalPrice ||
                 (booking.roomType?.pricePerNight || 0) * nights;
-
-              const depositAmount =
-                booking.depositAmount ||
-                (estimatedTotal > 0
-                  ? Math.max(Math.ceil(estimatedTotal * 0.3), 500)
-                  : 0);
-
-              const remainingAmount =
-                estimatedTotal > 0
-                  ? Math.max(estimatedTotal - depositAmount, 0)
-                  : 0;
 
               return (
                 <article
@@ -861,10 +849,12 @@ export default function AdminBookingsPage() {
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                              Deposit Payment
+                              Full Payment
                             </p>
                             <p className="mt-1 text-2xl font-black text-slate-950">
-                              {formatCurrency(depositAmount)}
+                              {estimatedTotal > 0
+                                ? formatCurrency(estimatedTotal)
+                                : "-"}
                             </p>
                             <p className="mt-1 text-sm leading-6 text-slate-600">
                               {paymentInfo.description}
@@ -885,22 +875,15 @@ export default function AdminBookingsPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                           <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
                             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                              ค่ามัดจำ
+                              ยอดชำระเต็มจำนวน
                             </p>
                             <p className="mt-1 font-black text-slate-950">
-                              {formatCurrency(depositAmount)}
-                            </p>
-                          </div>
-
-                          <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                              ยอดคงเหลือ
-                            </p>
-                            <p className="mt-1 font-black text-slate-950">
-                              {formatCurrency(remainingAmount)}
+                              {estimatedTotal > 0
+                                ? formatCurrency(estimatedTotal)
+                                : "-"}
                             </p>
                           </div>
 

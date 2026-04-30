@@ -46,7 +46,6 @@ type BookingItem = {
   createdAt?: string;
   updatedAt?: string;
 
-  depositAmount?: number | null;
   paymentStatus?: PaymentStatus | string | null;
   paymentMethod?: string | null;
   paymentSlipUrl?: string | null;
@@ -222,16 +221,6 @@ export default function AdminBookingDetailPage() {
 
     return nights * (booking.roomType?.pricePerNight || 0);
   }, [booking, nights]);
-
-  const depositAmount = useMemo(() => {
-    if (!booking) return 0;
-
-    if (booking.depositAmount) return booking.depositAmount;
-
-    return totalPrice > 0 ? Math.max(Math.ceil(totalPrice * 0.3), 500) : 0;
-  }, [booking, totalPrice]);
-
-  const remainingAmount = Math.max(totalPrice - depositAmount, 0);
 
   async function fetchBooking() {
     try {
@@ -415,7 +404,7 @@ export default function AdminBookingDetailPage() {
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
                 ตรวจสอบข้อมูลลูกค้า ห้องพัก วันที่เข้าพัก ยอดชำระ
-                และหลักฐานการโอนค่ามัดจำ ก่อนอัปเดตสถานะ
+                และหลักฐานการโอนชำระเงิน ก่อนอัปเดตสถานะ
               </p>
             </div>
 
@@ -637,10 +626,10 @@ export default function AdminBookingDetailPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                              ค่ามัดจำ
+                              ยอดชำระเต็มจำนวน
                             </p>
                             <p className="mt-1 text-2xl font-black text-slate-950">
-                              {formatCurrency(depositAmount)}
+                              {formatCurrency(totalPrice)}
                             </p>
                             <p className="mt-1 text-xs leading-5 text-slate-600">
                               {paymentInfo.description}
@@ -732,13 +721,22 @@ export default function AdminBookingDetailPage() {
                         Payment
                       </p>
                       <h3 className="text-2xl font-black text-slate-950">
-                        ข้อมูลชำระมัดจำ
+                        ข้อมูลชำระเงิน
                       </h3>
                     </div>
                   </div>
 
                   <div className="mt-5 grid gap-3">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                          ยอดชำระเต็มจำนวน
+                        </p>
+                        <p className="mt-1 font-black text-slate-950">
+                          {formatCurrency(totalPrice)}
+                        </p>
+                      </div>
+
                       <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                           วิธีชำระเงิน
@@ -754,35 +752,6 @@ export default function AdminBookingDetailPage() {
                         </p>
                         <p className="mt-1 font-black text-slate-950">
                           {formatDateTime(booking.paidAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          ราคารวม
-                        </p>
-                        <p className="mt-1 font-black text-slate-950">
-                          {formatCurrency(totalPrice)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-                          ค่ามัดจำ
-                        </p>
-                        <p className="mt-1 font-black text-emerald-700">
-                          {formatCurrency(depositAmount)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          ยอดคงเหลือ
-                        </p>
-                        <p className="mt-1 font-black text-slate-950">
-                          {formatCurrency(remainingAmount)}
                         </p>
                       </div>
                     </div>
