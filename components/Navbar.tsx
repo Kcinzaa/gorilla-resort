@@ -62,6 +62,14 @@ export default function Navbar({
 
   const isAdmin = profile?.isAdmin === true;
 
+  function isActivePath(href: string) {
+    if (href === "/home") {
+      return pathname === "/home" || pathname === "/";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   function handleOpenProfile() {
     if (onOpenProfile) {
       onOpenProfile();
@@ -77,11 +85,11 @@ export default function Navbar({
         <div className="flex items-center justify-between gap-3">
           <Link href="/home" className="flex min-w-0 items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
-                <img
+              <img
                 src="/images/logo/logo.jpg"
                 alt="Gorilla Resort Logo"
                 className="h-full w-full object-contain"
-                />
+              />
             </div>
 
             <div className="hidden min-w-0 sm:block">
@@ -96,7 +104,7 @@ export default function Navbar({
 
           <nav className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active = isActivePath(item.href);
 
               return (
                 <Link
@@ -147,9 +155,10 @@ export default function Navbar({
               <button
                 type="button"
                 onClick={handleOpenProfile}
-                className="inline-flex max-w-[190px] items-center gap-3 rounded-2xl bg-slate-100 px-3 py-3 text-left transition hover:bg-slate-200 sm:max-w-[240px] sm:px-4"
+                className="inline-flex max-w-[210px] items-center gap-3 rounded-2xl bg-slate-100 px-3 py-3 text-left transition hover:bg-slate-200 sm:max-w-[260px] sm:px-4"
               >
                 <ProfileAvatar loading={loading} profile={profile} />
+
                 <div className="hidden min-w-0 sm:block">
                   <p className="truncate text-sm font-black text-slate-700">
                     {loading
@@ -179,9 +188,14 @@ export default function Navbar({
           <div className="ml-auto flex h-full w-full max-w-sm flex-col rounded-[2rem] bg-white p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                  <Hotel size={24} className="text-white" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 ring-1 ring-slate-200">
+                  <img
+                    src="/images/logo/logo.jpg"
+                    alt="Gorilla Resort Logo"
+                    className="h-full w-full object-contain"
+                  />
                 </div>
+
                 <div>
                   <p className="font-black text-slate-950">Gorilla Resort</p>
                   <p className="text-sm text-slate-500">Resort Booking</p>
@@ -200,7 +214,7 @@ export default function Navbar({
             <div className="grid gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const active = pathname.startsWith(item.href);
+                const active = isActivePath(item.href);
 
                 return (
                   <Link
@@ -251,10 +265,13 @@ export default function Navbar({
                 }}
                 className="mt-auto flex items-center gap-3 rounded-2xl bg-slate-100 p-4 text-left transition hover:bg-slate-200"
               >
-                <ProfileAvatar loading={false} profile={profile} />
+                <ProfileAvatar loading={loading} profile={profile} />
+
                 <div className="min-w-0">
                   <p className="truncate font-black text-slate-950">
-                    {profile?.displayName || "Test Customer"}
+                    {loading
+                      ? "กำลังโหลด..."
+                      : profile?.displayName || "Test Customer"}
                   </p>
                   <p className="text-sm text-slate-500">
                     {isAdmin ? "Admin Mode" : "กดดูโปรไฟล์ LINE"}
@@ -279,6 +296,7 @@ export default function Navbar({
                     ข้อมูลลูกค้า
                   </h2>
                 </div>
+
                 <button
                   type="button"
                   onClick={() => setOpenProfile(false)}
@@ -304,9 +322,11 @@ export default function Navbar({
                     <div className="mb-4">
                       <ProfileAvatar loading={false} profile={profile} large />
                     </div>
+
                     <h3 className="text-2xl font-black text-slate-950">
                       {profile?.displayName || "Test Customer"}
                     </h3>
+
                     <p className="mt-1 text-sm text-slate-500">
                       {isAdmin
                         ? "Admin Mode"
@@ -334,9 +354,18 @@ export default function Navbar({
                   )}
 
                   <div className="mt-6 grid gap-3">
-                    <InfoRow label="LINE User ID" value={profile?.userId || "test-line-user-001"} />
-                    <InfoRow label="Display Name" value={profile?.displayName || "Test Customer"} />
-                    <InfoRow label="Role" value={isAdmin ? "ADMIN" : "CUSTOMER"} />
+                    <InfoRow
+                      label="LINE User ID"
+                      value={profile?.userId || "test-line-user-001"}
+                    />
+                    <InfoRow
+                      label="Display Name"
+                      value={profile?.displayName || "Test Customer"}
+                    />
+                    <InfoRow
+                      label="Role"
+                      value={isAdmin ? "ADMIN" : "CUSTOMER"}
+                    />
                   </div>
 
                   <button
@@ -344,7 +373,7 @@ export default function Navbar({
                     onClick={() => setOpenProfile(false)}
                     className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
                   >
-                    ปิด
+                    <span className="text-white">ปิด</span>
                   </button>
                 </>
               )}

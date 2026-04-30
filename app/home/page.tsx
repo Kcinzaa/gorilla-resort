@@ -253,7 +253,7 @@ export default function ResortHomePage() {
   return (
     <main className="min-h-screen bg-[#f4f7f2] text-slate-950">
       <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
-        <Navbar showProfile={false} />
+        <Navbar showProfile={true} />
 
         <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 shadow-2xl shadow-slate-300 sm:rounded-[3rem]">
           <div className="absolute inset-0">
