@@ -1004,18 +1004,6 @@ export default function MyBookingsPage() {
                             </div>
                           )}
 
-                          <div className="mt-5">
-                            <Link
-                              href="/availability"
-                              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-700 transition hover:bg-slate-200"
-                            >
-                              <span className="text-slate-700">จองเพิ่ม</span>
-                              <ArrowRight
-                                size={18}
-                                className="text-slate-700"
-                              />
-                            </Link>
-                          </div>
                         </div>
                       </div>
                     </article>
