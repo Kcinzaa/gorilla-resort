@@ -943,15 +943,7 @@ export default function MyBookingsPage() {
                             </div>
 
                             <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
-                              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                                  เลขอ้างอิงการโอน
-                                </p>
-                                <p className="mt-1 break-all font-black text-slate-950">
-                                  {booking.paymentReference || "-"}
-                                </p>
-                              </div>
-
+                              <div className="hidden" />
                               {booking.paymentSlipUrl ? (
                                 <a
                                   href={booking.paymentSlipUrl}

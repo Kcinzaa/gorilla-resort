@@ -600,7 +600,8 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
 
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+              {pendingBookings.length > 0 && (
+                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
                   <Clock3 size={28} className="text-amber-600" />
                 </div>
@@ -611,9 +612,11 @@ export default function AdminDashboardPage() {
                 <p className="mt-2 text-4xl font-black text-slate-950">
                   {pendingBookings.length}
                 </p>
-              </div>
+                </div>
+              )}
 
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+              {confirmedBookings.length > 0 && (
+                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
                   <CheckCircle2 size={28} className="text-emerald-600" />
                 </div>
@@ -624,7 +627,8 @@ export default function AdminDashboardPage() {
                 <p className="mt-2 text-4xl font-black text-slate-950">
                   {confirmedBookings.length}
                 </p>
-              </div>
+                </div>
+              )}
 
               <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
@@ -640,8 +644,11 @@ export default function AdminDashboardPage() {
               </div>
             </section>
 
-            <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+            {(paymentPendingBookings.length > 0 ||
+              unpaidBookings.length > 0) && (
+              <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {paymentPendingBookings.length > 0 && (
+                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
                   <ReceiptText size={28} className="text-amber-600" />
                 </div>
@@ -655,25 +662,11 @@ export default function AdminDashboardPage() {
                 <p className="mt-2 text-sm font-bold text-amber-700">
                   {formatCurrency(pendingDepositTotal)}
                 </p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-red-100">
-                  <XCircle size={28} className="text-red-600" />
                 </div>
+              )}
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  สลิปถูกปฏิเสธ
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {rejectedPaymentBookings.length}
-                </p>
-                <p className="mt-2 text-sm font-bold text-red-700">
-                  ต้องให้ลูกค้าส่งใหม่
-                </p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+              {unpaidBookings.length > 0 && (
+                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 ring-1 ring-slate-200">
                   <ReceiptText size={28} className="text-slate-600" />
                 </div>
@@ -687,8 +680,10 @@ export default function AdminDashboardPage() {
                 <p className="mt-2 text-sm font-bold text-slate-500">
                   UNPAID
                 </p>
-              </div>
-            </section>
+                </div>
+              )}
+              </section>
+            )}
 
             <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
               <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -948,18 +943,20 @@ export default function AdminDashboardPage() {
                                 {statusInfo.label}
                               </div>
 
-                              <div
-                                className={[
-                                  "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  paymentInfo.className,
-                                ].join(" ")}
-                              >
-                                <PaymentIcon
-                                  size={17}
-                                  className={paymentInfo.iconClass}
-                                />
-                                {paymentInfo.label}
-                              </div>
+                              {booking.paymentStatus !== "REJECTED" && (
+                                <div
+                                  className={[
+                                    "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
+                                    paymentInfo.className,
+                                  ].join(" ")}
+                                >
+                                  <PaymentIcon
+                                    size={17}
+                                    className={paymentInfo.iconClass}
+                                  />
+                                  {paymentInfo.label}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
