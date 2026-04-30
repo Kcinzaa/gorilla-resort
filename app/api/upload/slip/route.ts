@@ -67,12 +67,6 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "slips");
-
-    await mkdir(uploadDir, {
-      recursive: true,
-    });
-
     const extension = createSafeExtension(file);
     const fileName = createSlipFileName(extension);
 
@@ -90,6 +84,23 @@ export async function POST(request: Request) {
         url: publicUrl,
       });
     }
+
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "ยังไม่ได้ตั้งค่า Supabase Storage สำหรับอัปโหลดสลิปบน production",
+        },
+        { status: 500 }
+      );
+    }
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "slips");
+
+    await mkdir(uploadDir, {
+      recursive: true,
+    });
 
     const filePath = path.join(uploadDir, fileName);
 
