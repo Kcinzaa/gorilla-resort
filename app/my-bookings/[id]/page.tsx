@@ -441,9 +441,10 @@ export default function MyBookingDetailPage() {
                     href={booking.paymentSlipUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
                   >
-                    เปิดดูสลิป
+                    <ReceiptText size={18} className="text-white" />
+                    <span className="text-white">เปิดดูสลิป</span>
                   </a>
                 ) : (
                   <div className="mt-4 rounded-2xl bg-white px-5 py-4 text-center text-sm font-black text-slate-500 ring-1 ring-slate-200">
