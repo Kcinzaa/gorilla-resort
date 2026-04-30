@@ -50,7 +50,6 @@ type BookingItem = {
   paymentStatus?: PaymentStatus | string | null;
   paymentMethod?: string | null;
   paymentSlipUrl?: string | null;
-  paymentReference?: string | null;
   paidAt?: string | null;
 
   roomType?: {
@@ -165,7 +164,7 @@ function getPaymentStatusInfo(status?: string | null) {
   if (status === "REJECTED") {
     return {
       label: "ปฏิเสธสลิป",
-      description: "ข้อมูลสลิปหรือเลขอ้างอิงไม่ถูกต้อง",
+      description: "ข้อมูลสลิปไม่ถูกต้อง",
       icon: XCircle,
       badgeClass: "bg-red-50 text-red-700 ring-red-100",
       cardClass: "border-red-200 bg-red-50",
@@ -759,15 +758,6 @@ export default function AdminBookingDetailPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        เลขอ้างอิงการโอน
-                      </p>
-                      <p className="mt-1 break-all font-black text-slate-950">
-                        {booking.paymentReference || "-"}
-                      </p>
-                    </div>
-
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -810,7 +800,7 @@ export default function AdminBookingDetailPage() {
                       หลักฐานการโอนเงิน
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      ตรวจสอบรูปสลิปและเลขอ้างอิงก่อนกดยืนยันชำระเงิน
+                      ตรวจสอบรูปสลิปก่อนกดยืนยันชำระเงิน
                     </p>
                   </div>
 

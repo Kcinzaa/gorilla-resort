@@ -49,7 +49,6 @@ type BookingItem = {
   paymentStatus?: PaymentStatus | string | null;
   paymentMethod?: string | null;
   paymentSlipUrl?: string | null;
-  paymentReference?: string | null;
   paidAt?: string | null;
 
   roomType?: {
@@ -159,7 +158,7 @@ function getPaymentStatusInfo(status?: string | null) {
   if (status === "REJECTED") {
     return {
       label: "ปฏิเสธสลิป",
-      description: "ข้อมูลสลิปหรือเลขอ้างอิงไม่ถูกต้อง",
+      description: "ข้อมูลสลิปไม่ถูกต้อง",
       icon: XCircle,
       badgeClass: "bg-red-50 text-red-700 ring-red-100",
       iconClass: "text-red-600",
@@ -258,7 +257,6 @@ export default function AdminBookingsPage() {
         booking.status,
         booking.paymentStatus,
         booking.paymentMethod,
-        booking.paymentReference,
       ]
         .filter(Boolean)
         .join(" ")
@@ -548,7 +546,7 @@ export default function AdminBookingsPage() {
               <input
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
-                placeholder="ค้นหาชื่อลูกค้า, เบอร์โทร, รหัสจอง, ห้องพัก, เลขอ้างอิง..."
+                placeholder="ค้นหาชื่อลูกค้า, เบอร์โทร, รหัสจอง, ห้องพัก..."
                 className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
               />
             </div>
@@ -925,16 +923,7 @@ export default function AdminBookingsPage() {
                           </div>
                         </div>
 
-                        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-                          <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                              เลขอ้างอิงการโอน
-                            </p>
-                            <p className="mt-1 break-all font-black text-slate-950">
-                              {booking.paymentReference || "-"}
-                            </p>
-                          </div>
-
+                        <div className="mt-3 grid gap-3">
                           {booking.paymentSlipUrl ? (
   <div className="grid gap-3">
     <div className="overflow-hidden rounded-2xl bg-white p-3 ring-1 ring-slate-200">
