@@ -246,6 +246,10 @@ export default function BookingForm({
 
       if (!submittedSlipUrl && selectedSlipFile) {
         submittedSlipUrl = await uploadSlipFile(selectedSlipFile);
+
+        if (!submittedSlipUrl) {
+          return;
+        }
       }
 
       if (!submittedSlipUrl) {

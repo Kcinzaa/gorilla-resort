@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { NextResponse } from "next/server";
 import {
   hasSupabaseStorageConfig,
   uploadSupabaseObject,
@@ -66,7 +66,6 @@ export async function POST(request: Request) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
     const extension = createSafeExtension(file);
     const fileName = createSlipFileName(extension);
 
@@ -97,26 +96,20 @@ export async function POST(request: Request) {
     }
 
     const uploadDir = path.join(process.cwd(), "public", "uploads", "slips");
-
-    await mkdir(uploadDir, {
-      recursive: true,
-    });
+    await mkdir(uploadDir, { recursive: true });
 
     const filePath = path.join(uploadDir, fileName);
-
     await writeFile(filePath, buffer);
-
-    const publicUrl = `/uploads/slips/${fileName}`;
 
     return NextResponse.json({
       success: true,
       message: "อัปโหลดสลิปสำเร็จ",
-      url: publicUrl,
+      url: `/uploads/slips/${fileName}`,
     });
   } catch (error) {
     console.error("UPLOAD SLIP ERROR:", error);
 
-    const message = error instanceof Error ? error.message : "";
+    const message = error instanceof Error ? error.message : String(error);
 
     if (message.startsWith("SUPABASE_UPLOAD_FAILED:")) {
       return NextResponse.json(
@@ -134,6 +127,7 @@ export async function POST(request: Request) {
       {
         success: false,
         message: "ไม่สามารถอัปโหลดสลิปได้",
+        detail: message,
       },
       { status: 500 }
     );
