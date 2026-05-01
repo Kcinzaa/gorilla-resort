@@ -202,6 +202,33 @@ function toArray<T>(payload: any): T[] {
   return [];
 }
 
+function AdminStatCard({
+  icon: Icon,
+  iconClass,
+  label,
+  value,
+}: {
+  icon: typeof Clock3;
+  iconClass: string;
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+      <div
+        className={[
+          "flex h-14 w-14 items-center justify-center rounded-2xl ring-1",
+          iconClass,
+        ].join(" ")}
+      >
+        <Icon size={26} />
+      </div>
+      <p className="mt-5 text-sm font-bold text-slate-500">{label}</p>
+      <p className="mt-2 text-4xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
 export default function AdminBookingsPage() {
   const router = useRouter();
 
@@ -425,71 +452,37 @@ export default function AdminBookingsPage() {
           </div>
         </header>
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8 lg:p-10">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
-          </div>
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-end">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 ring-1 ring-white/10">
-                <ShieldCheck size={16} className="text-slate-200" />
-                <span className="text-slate-200">Booking Management</span>
-              </div>
-
-              <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                ตรวจสอบรายการจองและการชำระเงิน
-              </h2>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ดูรายการจองล่าสุด ตรวจสอบข้อมูลลูกค้า วันที่เข้าพัก ห้องพักที่เลือก
-                อัปเดตสถานะการจอง และตรวจสอบสลิปชำระเงิน
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Clock3 size={26} className="text-amber-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {pendingCount}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">รอตรวจสอบ</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <CheckCircle2 size={26} className="text-emerald-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {confirmedCount}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">ยืนยันแล้ว</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <XCircle size={26} className="text-red-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {cancelledCount}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">ยกเลิก</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <ReceiptText size={26} className="text-blue-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {paymentPendingCount}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">รอตรวจสลิป</p>
-              </div>
-
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <Banknote size={26} className="text-emerald-300" />
-                <p className="mt-4 text-3xl font-black text-white">
-                  {paidCount}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">ชำระแล้ว</p>
-              </div>
-            </div>
-          </div>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <AdminStatCard
+            icon={Clock3}
+            iconClass="bg-amber-50 text-amber-600 ring-amber-100"
+            label="รอตรวจสอบ"
+            value={pendingCount}
+          />
+          <AdminStatCard
+            icon={CheckCircle2}
+            iconClass="bg-emerald-50 text-emerald-600 ring-emerald-100"
+            label="ยืนยันแล้ว"
+            value={confirmedCount}
+          />
+          <AdminStatCard
+            icon={XCircle}
+            iconClass="bg-red-50 text-red-600 ring-red-100"
+            label="ยกเลิก"
+            value={cancelledCount}
+          />
+          <AdminStatCard
+            icon={ReceiptText}
+            iconClass="bg-blue-50 text-blue-600 ring-blue-100"
+            label="รอตรวจสลิป"
+            value={paymentPendingCount}
+          />
+          <AdminStatCard
+            icon={Banknote}
+            iconClass="bg-emerald-50 text-emerald-600 ring-emerald-100"
+            label="ชำระแล้ว"
+            value={paidCount}
+          />
         </section>
 
         <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6">

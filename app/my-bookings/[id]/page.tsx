@@ -386,7 +386,7 @@ export default function MyBookingDetailPage() {
                 <InfoCard label="วันเข้าพัก" value={formatDate(booking.checkIn)} />
                 <InfoCard label="วันออก" value={formatDate(booking.checkOut)} />
                 <InfoCard label="จำนวนคืน" value={`${nights} คืน`} />
-                <InfoCard label="ผู้เข้าพัก" value={`${booking.guests} คน`} />
+                <InfoCard label="ชื่อ นามสกุล" value={booking.displayName || "-"} />
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">

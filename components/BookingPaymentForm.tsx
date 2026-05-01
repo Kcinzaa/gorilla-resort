@@ -430,7 +430,11 @@ export default function BookingPaymentForm() {
         <div className="mt-5 grid gap-3">
           <SideRow icon={CalendarDays} label="เข้าพัก" value={draft.checkIn} />
           <SideRow icon={CalendarDays} label="ออก" value={draft.checkOut} />
-          <SideRow icon={User} label="ผู้เข้าพัก" value={`${draft.guests} คน`} />
+          <SideRow
+            icon={User}
+            label="ชื่อ นามสกุล"
+            value={draft.customerName || draft.profile.displayName || "-"}
+          />
           <SideRow icon={ReceiptText} label="จำนวนคืน" value={`${draft.nights} คืน`} />
         </div>
       </aside>

@@ -592,10 +592,10 @@ export default function AdminBookingDetailPage() {
 
                       <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          Guests
+                          ชื่อ นามสกุล
                         </p>
                         <p className="mt-1 font-black text-slate-950">
-                          {booking.guests} คน
+                          {booking.displayName || "-"}
                         </p>
                       </div>
                     </div>

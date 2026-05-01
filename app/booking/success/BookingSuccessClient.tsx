@@ -8,14 +8,12 @@ import {
   BedDouble,
   CalendarCheck,
   CheckCircle2,
-  ChevronRight,
   Clock3,
   Copy,
   CreditCard,
   Home,
   Loader2,
   MessageCircle,
-  ReceiptText,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -266,7 +264,7 @@ export default function BookingSuccessClient() {
           </div>
         </div>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[1fr_360px]">
+        <section className="mt-5 grid gap-5">
           <div className="grid gap-5">
             <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-7">
               <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -340,7 +338,7 @@ export default function BookingSuccessClient() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white">
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -369,19 +367,6 @@ export default function BookingSuccessClient() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-slate-50 p-5 ring-1 ring-slate-200">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                        ผู้เข้าพัก
-                      </p>
-                      <p className="mt-2 text-2xl font-black text-slate-950">
-                        {info.guests ? `${info.guests} คน` : "-"}
-                      </p>
-                    </div>
-                    <BedDouble size={26} className="text-slate-500" />
-                  </div>
-                </div>
               </div>
             </section>
 
@@ -438,57 +423,6 @@ export default function BookingSuccessClient() {
             </section>
           </div>
 
-          <aside className="h-fit rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6 lg:sticky lg:top-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-950 text-white">
-              <ReceiptText size={30} className="text-white" />
-            </div>
-
-            <h2 className="mt-5 text-2xl font-black text-slate-950">
-              เมนูลัด
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              ติดตามสถานะการจอง หรือกลับไปเลือกห้องพักเพิ่มเติม
-            </p>
-
-            <div className="mt-5 grid gap-3">
-              <Link
-                href="/my-bookings"
-                className="group flex items-center justify-between gap-3 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
-              >
-                <span className="text-white">ดูการจองของฉัน</span>
-                <ChevronRight
-                  size={18}
-                  className="text-white transition group-hover:translate-x-1"
-                />
-              </Link>
-
-              <Link
-                href="/rooms"
-                className="group flex items-center justify-between gap-3 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-              >
-                <span className="text-white">ไปหน้าห้องพัก</span>
-                <Home
-                  size={18}
-                  className="text-white transition group-hover:scale-110"
-                />
-              </Link>
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] bg-amber-50 p-5 ring-1 ring-amber-100">
-              <div className="flex items-start gap-3">
-                <Clock3 size={24} className="text-amber-600" />
-                <div>
-                  <p className="font-black text-amber-700">
-                    รอการยืนยันจากแอดมิน
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-amber-700">
-                    รายการนี้ยังไม่ถือว่ายืนยันสมบูรณ์จนกว่าแอดมินจะตรวจสอบและอัปเดตสถานะ
-                  </p>
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
 
       </section>
