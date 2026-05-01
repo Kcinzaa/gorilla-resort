@@ -10,6 +10,14 @@ function cleanNumber(value: unknown) {
   return Number(value);
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isReservedRoomsColumnError(error: unknown) {
+  return getErrorMessage(error).includes("reservedRooms");
+}
+
 export async function GET(request: Request) {
   try {
     if (!isAdminRequest(request)) {
@@ -22,11 +30,33 @@ export async function GET(request: Request) {
       );
     }
 
-    const rooms = await prisma.roomType.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    let rooms;
+    try {
+      rooms = await prisma.roomType.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    } catch (error) {
+      if (!isReservedRoomsColumnError(error)) throw error;
+      rooms = (await prisma.roomType.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          pricePerNight: true,
+          capacity: true,
+          totalRooms: true,
+          imageUrl: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })).map((room) => ({ ...room, reservedRooms: 0 }));
+    }
 
     return NextResponse.json({
       success: true,

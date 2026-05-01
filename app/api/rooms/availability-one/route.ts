@@ -12,6 +12,10 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function isReservedRoomsColumnError(error: unknown) {
+  return getErrorMessage(error).includes("reservedRooms");
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -42,9 +46,20 @@ export async function GET(request: Request) {
       );
     }
 
-    const roomType = await prisma.roomType.findFirst({
-      where: { id: roomTypeId, isActive: true },
-      select: { id: true, totalRooms: true, reservedRooms: true },
+    async function loadRoomType(includeReservedRooms = true) {
+      return prisma.roomType.findFirst({
+        where: { id: roomTypeId, isActive: true },
+        select: {
+          id: true,
+          totalRooms: true,
+          ...(includeReservedRooms ? { reservedRooms: true } : {}),
+        },
+      });
+    }
+
+    let roomType = await loadRoomType(true).catch((error) => {
+      if (!isReservedRoomsColumnError(error)) throw error;
+      return loadRoomType(false);
     });
 
     if (!roomType) {
@@ -70,7 +85,10 @@ export async function GET(request: Request) {
     });
 
     const totalRooms = Number(roomType.totalRooms ?? 1);
-    const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);
+    const reservedRooms = Math.min(
+      Number("reservedRooms" in roomType ? roomType.reservedRooms || 0 : 0),
+      totalRooms
+    );
     const heldRooms = bookedRooms + reservedRooms;
     const availableRooms = Math.max(totalRooms - heldRooms, 0);
 

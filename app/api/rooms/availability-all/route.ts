@@ -35,6 +35,10 @@ function getErrorMessage(error: unknown) {
   return String(error);
 }
 
+function isReservedRoomsColumnError(error: unknown) {
+  return getErrorMessage(error).includes("reservedRooms");
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -65,14 +69,39 @@ export async function GET(request: Request) {
       );
     }
 
-    const roomTypes: RoomTypeItem[] = await prisma.roomType.findMany({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    let roomTypes: RoomTypeItem[];
+    try {
+      roomTypes = await prisma.roomType.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    } catch (error) {
+      if (!isReservedRoomsColumnError(error)) throw error;
+      roomTypes = (await prisma.roomType.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          pricePerNight: true,
+          capacity: true,
+          totalRooms: true,
+          imageUrl: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })).map((room) => ({ ...room, reservedRooms: 0 }));
+    }
 
     const results = await Promise.all(
       roomTypes.map(async (roomType: RoomTypeItem) => {
