@@ -10,8 +10,6 @@ type AvailabilityRoom = {
   totalRooms: number | null;
   imageUrl: string | null;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 };
 
 type ConfirmedBooking = {
@@ -87,7 +85,17 @@ export async function GET(request: Request) {
         isActive: true,
       },
       orderBy: {
-        createdAt: "desc",
+        id: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        pricePerNight: true,
+        capacity: true,
+        totalRooms: true,
+        imageUrl: true,
+        isActive: true,
       },
     });
 
