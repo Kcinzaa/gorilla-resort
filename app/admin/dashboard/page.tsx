@@ -732,211 +732,52 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid gap-5">
-                {occupancyRows.length === 0 ? (
-                  <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[2rem] bg-slate-50 p-8 text-center ring-1 ring-slate-200">
-                    <BedDouble size={42} className="text-slate-400" />
-                    <h3 className="mt-5 text-2xl font-black text-slate-950">
-                      ยังไม่มีข้อมูลห้องพัก
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      เพิ่มประเภทห้องพักก่อน แล้วตารางห้องว่างจะแสดงตรงนี้
-                    </p>
-                  </div>
-                ) : (
-                  occupancyRows.map(({ room, days }) => {
-                    const totalRooms = Number(room.totalRooms ?? 1);
-                    const reservedRooms = Math.min(
-                      Math.max(Number(room.reservedRooms || 0), 0),
-                      totalRooms
-                    );
-
-                    return (
-                      <article
-                        key={room.id}
-                        className="overflow-hidden rounded-[2rem] bg-slate-50 shadow-sm ring-1 ring-slate-200"
-                      >
-                        <div className="grid gap-4 border-b border-slate-200 bg-white p-5 lg:grid-cols-[320px_1fr] lg:items-center">
-                          <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
-                              <BedDouble size={14} className="text-slate-600" />
-                              ประเภทห้องพัก
-                            </div>
-                            <h3 className="mt-3 text-2xl font-black text-slate-950">
-                              {room.name}
-                            </h3>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <span className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
-                                ทั้งหมด {totalRooms} ห้อง
-                              </span>
-                              {reservedRooms > 0 && (
-                                <span className="rounded-2xl bg-amber-50 px-4 py-2 text-sm font-black text-amber-700 ring-1 ring-amber-100">
-                                  ล็อกรายเดือน {reservedRooms} ห้อง
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-3">
-                            <ScheduleSummaryBox
-                              label="วันนี้เหลือ"
-                              value={`${days[0]?.availableCount ?? 0}`}
-                              tone="green"
-                            />
-                            <ScheduleSummaryBox
-                              label="จอง/ล็อกวันนี้"
-                              value={`${days[0]?.bookedCount ?? 0}`}
-                              tone="amber"
-                            />
-                            <ScheduleSummaryBox
-                              label="เต็มกี่วัน"
-                              value={`${days.filter((day) => day.availableCount <= 0).length}`}
-                              tone="red"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="overflow-x-auto p-4">
-                          <div className="grid min-w-[980px] grid-cols-7 gap-3">
-                            {days.map((day) => {
-                              const isFull = day.availableCount <= 0;
-                              const hasBooking = day.bookedCount > 0;
-
-                              return (
-                                <div
-                                  key={`${room.id}-${day.date.toISOString()}`}
-                                  className={[
-                                    "rounded-[1.5rem] bg-white p-4 ring-1 transition",
-                                    isFull
-                                      ? "ring-red-200"
-                                      : hasBooking
-                                        ? "ring-amber-200"
-                                        : "ring-emerald-200",
-                                  ].join(" ")}
-                                >
-                                  <p className="text-center text-sm font-black text-slate-950">
-                                    {formatDateOnly(day.date)}
-                                  </p>
-
-                                  <div
-                                    className={[
-                                      "mt-3 rounded-[1.25rem] p-4 text-center",
-                                      isFull
-                                        ? "bg-red-50"
-                                        : hasBooking
-                                          ? "bg-amber-50"
-                                          : "bg-emerald-50",
-                                    ].join(" ")}
-                                  >
-                                    <p
-                                      className={[
-                                        "text-xs font-black",
-                                        isFull
-                                          ? "text-red-700"
-                                          : hasBooking
-                                            ? "text-amber-700"
-                                            : "text-emerald-700",
-                                      ].join(" ")}
-                                    >
-                                      {isFull ? "เต็ม" : "ห้องว่าง"}
-                                    </p>
-                                    <p className="mt-1 text-4xl font-black text-slate-950">
-                                      {day.availableCount}
-                                    </p>
-                                    <p className="text-xs font-bold text-slate-500">
-                                      ห้อง
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-3 grid grid-cols-2 gap-2">
-                                    <div className="rounded-2xl bg-slate-100 px-2 py-2 text-center">
-                                      <p className="text-[11px] font-bold text-slate-500">
-                                        ลูกค้า
-                                      </p>
-                                      <p className="text-lg font-black text-slate-950">
-                                        {day.realBookedCount}
-                                      </p>
-                                    </div>
-                                    <div className="rounded-2xl bg-slate-100 px-2 py-2 text-center">
-                                      <p className="text-[11px] font-bold text-slate-500">
-                                        ล็อก
-                                      </p>
-                                      <p className="text-lg font-black text-slate-950">
-                                        {day.reservedRooms}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-3 min-h-20">
-                                    {day.bookings.length === 0 ? (
-                                      <p className="rounded-2xl bg-white px-3 py-3 text-center text-xs font-bold text-slate-400 ring-1 ring-slate-200">
-                                        ไม่มีลูกค้าจอง
-                                      </p>
-                                    ) : (
-                                      <div className="grid gap-2">
-                                        {day.bookings.slice(0, 2).map((booking) => (
-                                          <Link
-                                            key={booking.id}
-                                            href={`/admin/bookings/${booking.id}`}
-                                            className="rounded-2xl bg-white px-3 py-2 text-xs ring-1 ring-slate-200 transition hover:bg-slate-50"
-                                          >
-                                            <div className="flex items-center justify-between gap-2">
-                                              <p className="truncate font-black text-slate-950">
-                                                {booking.displayName || "ลูกค้า"}
-                                              </p>
-                                              <span className="shrink-0 font-black text-slate-500">
-                                                {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
-                                              </span>
-                                            </div>
-                                            <p className="mt-1 truncate text-[11px] font-bold text-slate-500">
-                                              {booking.bookingCode || `#${booking.id}`}
-                                            </p>
-                                          </Link>
-                                        ))}
-                                        {day.bookings.length > 2 && (
-                                          <p className="text-center text-xs font-black text-slate-500">
-                                            +{day.bookings.length - 2} รายการ
-                                          </p>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
+              <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-100">
+                  <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+                    สีเขียว
+                  </p>
+                  <p className="mt-1 text-lg font-black text-slate-950">
+                    ยังมีห้องว่าง
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-100">
+                  <p className="text-xs font-black uppercase tracking-wide text-amber-700">
+                    สีเหลือง
+                  </p>
+                  <p className="mt-1 text-lg font-black text-slate-950">
+                    มีจองหรือล็อกไว้
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
+                  <p className="text-xs font-black uppercase tracking-wide text-red-700">
+                    สีแดง
+                  </p>
+                  <p className="mt-1 text-lg font-black text-slate-950">
+                    ห้องเต็ม
+                  </p>
+                </div>
               </div>
 
-              <div className="hidden mb-5 flex-wrap gap-2 text-xs font-black">
-                <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700 ring-1 ring-emerald-100">
-                  ว่าง
-                </span>
-                <span className="rounded-full bg-amber-50 px-3 py-2 text-amber-700 ring-1 ring-amber-100">
-                  มีจอง/ล็อกไว้
-                </span>
-                <span className="rounded-full bg-red-50 px-3 py-2 text-red-700 ring-1 ring-red-100">
-                  เต็ม
-                </span>
-              </div>
-
-              <div className="hidden overflow-x-auto rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-                <table className="min-w-[1240px] w-full border-separate border-spacing-0 bg-white text-left">
+              <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
+                <table className="min-w-[1320px] w-full border-separate border-spacing-0 text-left">
                   <thead>
-                    <tr className="bg-slate-950 text-white">
+                    <tr>
                       <th className="sticky left-0 z-20 min-w-72 bg-slate-950 px-5 py-5 text-sm font-black text-white">
                         ห้องพัก
                       </th>
                       {scheduleDates.map((date) => (
                         <th
                           key={date.toISOString()}
-                          className="min-w-44 border-l border-slate-800 px-4 py-5 text-center text-sm font-black text-white"
+                          className="min-w-[150px] border-l border-slate-800 bg-slate-950 px-4 py-5 text-center text-sm font-black text-white"
                         >
-                          {formatDateOnly(date)}
+                          <span className="block text-xs font-bold text-slate-400">
+                            {formatWeekday(date)}
+                          </span>
+                          <span className="mt-1 block text-base font-black text-white">
+                            {formatDateOnly(date)}
+                          </span>
                         </th>
                       ))}
                     </tr>
@@ -954,127 +795,148 @@ export default function AdminDashboardPage() {
                       </tr>
                     ) : (
                       occupancyRows.map(({ room, days }) => (
-                        <tr key={room.id} className="group">
-                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-white px-5 py-6 transition group-hover:bg-slate-50">
-                            <p className="text-lg font-black text-slate-950">
+                        <tr key={room.id}>
+                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-white px-5 py-5 shadow-[8px_0_16px_rgba(15,23,42,0.05)]">
+                            <p className="text-xl font-black text-slate-950">
                               {room.name}
                             </p>
-                            <p className="mt-2 text-sm font-bold text-slate-600">
-                              ทั้งหมด {room.totalRooms ?? 1} ห้อง
-                            </p>
-                            {Number(room.reservedRooms || 0) > 0 && (
-                              <p className="mt-2 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-100">
-                                ล็อกไว้ {room.reservedRooms} ห้อง
-                              </p>
-                            )}
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                              <div className="rounded-2xl bg-slate-100 px-3 py-2">
+                                <p className="text-[11px] font-bold text-slate-500">
+                                  ทั้งหมด
+                                </p>
+                                <p className="text-lg font-black text-slate-950">
+                                  {room.totalRooms ?? 1}
+                                </p>
+                              </div>
+                              <div className="rounded-2xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
+                                <p className="text-[11px] font-bold text-amber-700">
+                                  ล็อก
+                                </p>
+                                <p className="text-lg font-black text-slate-950">
+                                  {room.reservedRooms ?? 0}
+                                </p>
+                              </div>
+                            </div>
                           </td>
 
                           {days.map((day) => {
                             const isFull = day.availableCount <= 0;
                             const hasBooking = day.bookedCount > 0;
+                            const totalRooms = Number(room.totalRooms ?? 1);
+                            const availabilityPercent =
+                              totalRooms > 0
+                                ? Math.max(
+                                    0,
+                                    Math.min(100, (day.availableCount / totalRooms) * 100)
+                                  )
+                                : 0;
 
                             return (
                               <td
                                 key={`${room.id}-${day.date.toISOString()}`}
-                                className="border-l border-t border-slate-200 bg-slate-50/40 px-3 py-4 align-top"
+                                className="border-l border-t border-slate-200 bg-slate-50 px-3 py-3 align-top"
                               >
                                 <div
                                   className={[
-                                    "min-h-48 rounded-[1.25rem] border p-3 shadow-sm transition",
+                                    "min-h-[250px] rounded-[1.35rem] border bg-white p-3 shadow-sm",
                                     isFull
-                                      ? "border-red-200 bg-red-50"
+                                      ? "border-red-200"
                                       : hasBooking
-                                        ? "border-amber-200 bg-amber-50"
-                                        : "border-emerald-200 bg-emerald-50",
+                                        ? "border-amber-200"
+                                        : "border-emerald-200",
                                   ].join(" ")}
                                 >
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <span
+                                  <div
+                                    className={[
+                                      "rounded-[1.1rem] px-3 py-3 text-center",
+                                      isFull
+                                        ? "bg-red-50"
+                                        : hasBooking
+                                          ? "bg-amber-50"
+                                          : "bg-emerald-50",
+                                    ].join(" ")}
+                                  >
+                                    <p
                                       className={[
-                                        "rounded-2xl px-3 py-2 text-center text-xs font-black",
+                                        "text-xs font-black uppercase tracking-wide",
                                         isFull
-                                          ? "bg-red-100 text-red-700"
+                                          ? "text-red-700"
                                           : hasBooking
-                                            ? "bg-amber-100 text-amber-700"
-                                            : "bg-emerald-100 text-emerald-700",
+                                            ? "text-amber-700"
+                                            : "text-emerald-700",
                                       ].join(" ")}
                                     >
-                                      {isFull
-                                        ? "เต็ม"
-                                        : hasBooking
-                                          ? `จอง/ล็อก ${day.bookedCount}`
-                                          : "ว่าง"}
-                                    </span>
-                                    <span className="rounded-2xl bg-white/90 px-3 py-2 text-center text-xs font-black text-slate-700 ring-1 ring-slate-200">
-                                      เหลือ {day.availableCount}
-                                    </span>
-                                  </div>
-
-                                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                                    <div className="rounded-2xl bg-white/80 px-2 py-2 ring-1 ring-slate-200">
-                                      <p className="text-[10px] font-bold text-slate-500">
-                                        ลูกค้า
-                                      </p>
-                                      <p className="text-sm font-black text-slate-950">
-                                        {day.realBookedCount}
-                                      </p>
-                                    </div>
-                                    <div className="rounded-2xl bg-white/80 px-2 py-2 ring-1 ring-slate-200">
-                                      <p className="text-[10px] font-bold text-slate-500">
-                                        ล็อก
-                                      </p>
-                                      <p className="text-sm font-black text-slate-950">
-                                        {day.reservedRooms}
-                                      </p>
-                                    </div>
-                                    <div className="rounded-2xl bg-white/80 px-2 py-2 ring-1 ring-slate-200">
-                                      <p className="text-[10px] font-bold text-slate-500">
-                                        รวม
-                                      </p>
-                                      <p className="text-sm font-black text-slate-950">
-                                        {day.bookedCount}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {day.bookings.slice(0, 3).map((booking) => (
-                                    <div
-                                      key={booking.id}
-                                      className="mt-2 rounded-xl bg-white/95 p-3 text-xs shadow-sm ring-1 ring-slate-200"
-                                    >
-                                      <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0">
-                                          <p className="truncate font-black text-slate-950">
-                                            {booking.displayName || "ลูกค้า"}
-                                          </p>
-                                          <p className="mt-1 text-[11px] font-bold text-slate-500">
-                                            {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
-                                          </p>
-                                        </div>
-                                        <span
-                                          className={[
-                                            "shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase",
-                                            booking.status === "CONFIRMED"
-                                              ? "bg-emerald-50 text-emerald-700"
-                                              : "bg-amber-50 text-amber-700",
-                                          ].join(" ")}
-                                        >
-                                          {booking.status === "CONFIRMED"
-                                            ? "ยืนยัน"
-                                            : "รอยืนยัน"}
-                                        </span>
-                                      </div>
-                                      <p className="mt-2 truncate text-[11px] font-bold text-slate-500">
-                                        {booking.bookingCode || `#${booking.id}`}
-                                      </p>
-                                    </div>
-                                  ))}
-
-                                  {day.bookings.length > 3 && (
-                                    <p className="mt-2 text-xs font-bold text-slate-500">
-                                      +{day.bookings.length - 3} รายการ
+                                      {isFull ? "เต็มแล้ว" : "เหลือ"}
                                     </p>
-                                  )}
+                                    <p className="mt-1 text-5xl font-black leading-none text-slate-950">
+                                      {day.availableCount}
+                                    </p>
+                                    <p className="mt-1 text-xs font-bold text-slate-500">
+                                      ห้องว่าง
+                                    </p>
+                                  </div>
+
+                                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                      className={[
+                                        "h-full rounded-full",
+                                        isFull
+                                          ? "bg-red-500"
+                                          : hasBooking
+                                            ? "bg-amber-500"
+                                            : "bg-emerald-500",
+                                      ].join(" ")}
+                                      style={{ width: `${availabilityPercent}%` }}
+                                    />
+                                  </div>
+
+                                  <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+                                    <SmallScheduleMetric label="จอง" value={day.realBookedCount} />
+                                    <SmallScheduleMetric label="ล็อก" value={day.reservedRooms} />
+                                    <SmallScheduleMetric label="รวม" value={day.bookedCount} />
+                                  </div>
+
+                                  <div className="mt-3 grid gap-2">
+                                    {day.bookings.length === 0 ? (
+                                      <div className="rounded-2xl border border-dashed border-slate-200 px-3 py-3 text-center text-xs font-bold text-slate-400">
+                                        ไม่มีรายการจอง
+                                      </div>
+                                    ) : (
+                                      day.bookings.slice(0, 2).map((booking) => (
+                                        <Link
+                                          key={booking.id}
+                                          href={`/admin/bookings/${booking.id}`}
+                                          className="rounded-2xl bg-slate-50 px-3 py-2 text-xs ring-1 ring-slate-200 transition hover:bg-white hover:shadow-sm"
+                                        >
+                                          <div className="flex items-center justify-between gap-2">
+                                            <p className="truncate font-black text-slate-950">
+                                              {booking.displayName || "ลูกค้า"}
+                                            </p>
+                                            <span
+                                              className={[
+                                                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black",
+                                                booking.status === "CONFIRMED"
+                                                  ? "bg-emerald-50 text-emerald-700"
+                                                  : "bg-amber-50 text-amber-700",
+                                              ].join(" ")}
+                                            >
+                                              {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
+                                            </span>
+                                          </div>
+                                          <p className="mt-1 truncate text-[11px] font-bold text-slate-500">
+                                            {booking.bookingCode || `#${booking.id}`}
+                                          </p>
+                                        </Link>
+                                      ))
+                                    )}
+
+                                    {day.bookings.length > 2 && (
+                                      <p className="text-center text-xs font-black text-slate-500">
+                                        +{day.bookings.length - 2} รายการ
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
                               </td>
                             );
@@ -1084,6 +946,7 @@ export default function AdminDashboardPage() {
                     )}
                   </tbody>
                 </table>
+                </div>
               </div>
             </section>
 
@@ -1381,35 +1244,32 @@ export default function AdminDashboardPage() {
   );
 }
 
-function ScheduleSummaryBox({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "green" | "amber" | "red";
-}) {
-  const toneClass =
-    tone === "green"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-      : tone === "amber"
-        ? "bg-amber-50 text-amber-700 ring-amber-100"
-        : "bg-red-50 text-red-700 ring-red-100";
-
-  return (
-    <div className={["rounded-2xl p-4 ring-1", toneClass].join(" ")}>
-      <p className="text-xs font-black">{label}</p>
-      <p className="mt-1 text-3xl font-black">{value}</p>
-    </div>
-  );
-}
-
 function formatDateOnly(date: Date) {
   return new Intl.DateTimeFormat("th-TH", {
     day: "2-digit",
     month: "short",
   }).format(date);
+}
+
+function formatWeekday(date: Date) {
+  return new Intl.DateTimeFormat("th-TH", {
+    weekday: "short",
+  }).format(date);
+}
+
+function SmallScheduleMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-xl bg-slate-100 px-2 py-2">
+      <p className="text-[10px] font-bold text-slate-500">{label}</p>
+      <p className="text-base font-black text-slate-950">{value}</p>
+    </div>
+  );
 }
 
 function formatInputDate(date: Date) {
