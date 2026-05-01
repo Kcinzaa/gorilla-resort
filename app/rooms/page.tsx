@@ -270,7 +270,7 @@ function RoomsContent() {
             <div
               className="relative min-h-[420px] overflow-hidden bg-slate-950 p-6 text-white sm:p-8 lg:min-h-full lg:p-10"
               style={{
-                backgroundImage: "url('/images/S__37019660_0.jpg')",
+                backgroundImage: "url('/images/S__55943295.jpg')",
                 backgroundPosition: "center",
                 backgroundSize: "cover",
               }}
