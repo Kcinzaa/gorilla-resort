@@ -41,6 +41,7 @@ type BookingItem = {
   checkIn: string;
   checkOut: string;
   guests: number;
+  roomCount?: number | null;
   totalPrice?: number | null;
   status: BookingStatus | string;
   createdAt?: string;
@@ -219,7 +220,11 @@ export default function AdminBookingDetailPage() {
 
     if (booking.totalPrice) return booking.totalPrice;
 
-    return nights * (booking.roomType?.pricePerNight || 0);
+    return (
+      nights *
+      (booking.roomType?.pricePerNight || 0) *
+      Math.max(Number(booking.roomCount || 1), 1)
+    );
   }, [booking, nights]);
 
   async function fetchBooking() {
@@ -596,6 +601,15 @@ export default function AdminBookingDetailPage() {
                         </p>
                         <p className="mt-1 font-black text-slate-950">
                           {booking.displayName || "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                          จำนวนห้อง
+                        </p>
+                        <p className="mt-1 font-black text-slate-950">
+                          {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
                         </p>
                       </div>
                     </div>

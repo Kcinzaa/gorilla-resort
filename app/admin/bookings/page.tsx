@@ -40,6 +40,7 @@ type BookingItem = {
   checkIn: string;
   checkOut: string;
   guests: number;
+  roomCount?: number | null;
   totalPrice?: number | null;
   status: BookingStatus | string;
   createdAt?: string;
@@ -600,7 +601,9 @@ export default function AdminBookingsPage() {
 
               const estimatedTotal =
                 booking.totalPrice ||
-                (booking.roomType?.pricePerNight || 0) * nights;
+                (booking.roomType?.pricePerNight || 0) *
+                  nights *
+                  Math.max(Number(booking.roomCount || 1), 1);
 
               return (
                 <article
@@ -743,10 +746,10 @@ export default function AdminBookingsPage() {
 
                         <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                            Guests
+                            จำนวนห้อง
                           </p>
                           <p className="mt-1 font-black text-slate-950">
-                            {booking.guests} คน
+                            {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
                           </p>
                         </div>
 

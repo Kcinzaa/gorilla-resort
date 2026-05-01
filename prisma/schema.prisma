@@ -48,6 +48,7 @@ model Booking {
   checkIn    DateTime
   checkOut   DateTime
   guests     Int
+  roomCount  Int      @default(1)
   totalPrice Int?
   status     String   @default("PENDING")
 

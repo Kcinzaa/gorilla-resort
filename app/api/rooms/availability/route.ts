@@ -19,6 +19,7 @@ type ConfirmedBooking = {
   checkIn: Date;
   checkOut: Date;
   status: string;
+  roomCount?: number | null;
 };
 
 function getErrorMessage(error: unknown) {
@@ -31,6 +32,10 @@ function getErrorMessage(error: unknown) {
 
 function isReservedRoomsColumnError(error: unknown) {
   return getErrorMessage(error).includes("reservedRooms");
+}
+
+function isRoomCountColumnError(error: unknown) {
+  return getErrorMessage(error).includes("roomCount");
 }
 
 function isValidDate(date: Date) {
@@ -124,8 +129,32 @@ export async function GET(request: Request) {
       CONFIRMED = แอดมินยืนยันแล้ว ยังกันห้อง
       CANCELLED = ไม่หักห้อง คืนห้องว่างทันที
     */
-    const confirmedBookings: ConfirmedBooking[] =
-      await prisma.booking.findMany({
+    let confirmedBookings: ConfirmedBooking[];
+    try {
+      confirmedBookings = await prisma.booking.findMany({
+        where: {
+          status: {
+            in: ["PENDING", "CONFIRMED"],
+          },
+          checkIn: {
+            lt: checkOut,
+          },
+          checkOut: {
+            gt: checkIn,
+          },
+        },
+        select: {
+          id: true,
+          roomTypeId: true,
+          checkIn: true,
+          checkOut: true,
+          status: true,
+          roomCount: true,
+        },
+      });
+    } catch (error) {
+      if (!isRoomCountColumnError(error)) throw error;
+      confirmedBookings = await prisma.booking.findMany({
         where: {
           status: {
             in: ["PENDING", "CONFIRMED"],
@@ -145,11 +174,13 @@ export async function GET(request: Request) {
           status: true,
         },
       });
+    }
 
     const bookedCountByRoomType = confirmedBookings.reduce<
       Record<number, number>
     >((acc: Record<number, number>, booking: ConfirmedBooking) => {
-      acc[booking.roomTypeId] = (acc[booking.roomTypeId] || 0) + 1;
+      acc[booking.roomTypeId] =
+        (acc[booking.roomTypeId] || 0) + Math.max(Number(booking.roomCount || 1), 1);
       return acc;
     }, {});
 
@@ -179,7 +210,10 @@ export async function GET(request: Request) {
         checkOut: checkOutParam,
         totalRoomTypes: rooms.length,
         totalHeldBookings:
-          confirmedBookings.length +
+          confirmedBookings.reduce(
+            (sum, booking) => sum + Math.max(Number(booking.roomCount || 1), 1),
+            0
+          ) +
           rooms.reduce((sum, room) => sum + Number(room.reservedRooms || 0), 0),
       },
     });

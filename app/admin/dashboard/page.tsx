@@ -38,6 +38,7 @@ type BookingItem = {
   checkIn?: string;
   checkOut?: string;
   guests?: number;
+  roomCount?: number | null;
   totalPrice?: number | null;
   status?: BookingStatus | string;
   createdAt?: string;
@@ -280,7 +281,10 @@ export default function AdminDashboardPage() {
         const dayBookings = roomBookings.filter((booking) =>
           isDateInBooking(date, booking)
         );
-        const bookedCount = dayBookings.length;
+        const bookedCount = dayBookings.reduce(
+          (sum, booking) => sum + Math.max(Number(booking.roomCount || 1), 1),
+          0
+        );
         const totalRooms = room.totalRooms ?? 1;
 
         return {
@@ -306,7 +310,7 @@ export default function AdminDashboardPage() {
       "Room",
       "Check In",
       "Check Out",
-      "Guests",
+      "Room Count",
       "Total Price",
       "Booking Status",
       "Payment Status",
@@ -322,7 +326,7 @@ export default function AdminDashboardPage() {
       booking.roomType?.name || "",
       booking.checkIn || "",
       booking.checkOut || "",
-      booking.guests || "",
+      Math.max(Number(booking.roomCount || 1), 1),
       booking.totalPrice || 0,
       booking.status || "",
       booking.paymentStatus || "",

@@ -39,6 +39,47 @@ function isReservedRoomsColumnError(error: unknown) {
   return getErrorMessage(error).includes("reservedRooms");
 }
 
+function isRoomCountColumnError(error: unknown) {
+  return getErrorMessage(error).includes("roomCount");
+}
+
+async function getOverlappingRoomCount({
+  roomTypeId,
+  checkIn,
+  checkOut,
+}: {
+  roomTypeId: number;
+  checkIn: Date;
+  checkOut: Date;
+}) {
+  const where = {
+    roomTypeId,
+    status: {
+      in: ["PENDING", "CONFIRMED"],
+    },
+    checkIn: {
+      lt: checkOut,
+    },
+    checkOut: {
+      gt: checkIn,
+    },
+  };
+
+  try {
+    const result = await prisma.booking.aggregate({
+      where,
+      _sum: {
+        roomCount: true,
+      },
+    });
+
+    return result._sum.roomCount ?? 0;
+  } catch (error) {
+    if (!isRoomCountColumnError(error)) throw error;
+    return prisma.booking.count({ where });
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -105,25 +146,10 @@ export async function GET(request: Request) {
 
     const results = await Promise.all(
       roomTypes.map(async (roomType: RoomTypeItem) => {
-        const overlappingBookings = await prisma.booking.count({
-          where: {
-            roomTypeId: roomType.id,
-
-            // สำคัญ:
-            // PENDING = ลูกค้าส่งสลิปและจองแล้ว ต้องกันห้องไว้ก่อน
-            // CONFIRMED = แอดมินยืนยันแล้ว ยังกันห้อง
-            // CANCELLED = ไม่หักห้อง
-            status: {
-              in: ["PENDING", "CONFIRMED"],
-            },
-
-            checkIn: {
-              lt: checkOut,
-            },
-            checkOut: {
-              gt: checkIn,
-            },
-          },
+        const overlappingBookings = await getOverlappingRoomCount({
+          roomTypeId: roomType.id,
+          checkIn,
+          checkOut,
         });
 
         const totalRooms = Number(roomType.totalRooms ?? 1);

@@ -91,6 +91,7 @@ export default function BookingForm({
 
   const [checkIn] = useState(initialCheckIn);
   const [checkOut] = useState(initialCheckOut);
+  const [roomCount, setRoomCount] = useState(1);
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
@@ -105,7 +106,12 @@ export default function BookingForm({
     () => calculateNights(checkIn, checkOut),
     [checkIn, checkOut]
   );
-  const totalPrice = nights * room.pricePerNight;
+  const maxBookableRooms = Math.max(Number(availability?.availableRooms || 0), 0);
+  const safeRoomCount = Math.min(
+    Math.max(roomCount, 1),
+    Math.max(maxBookableRooms, 1)
+  );
+  const totalPrice = nights * room.pricePerNight * safeRoomCount;
   const roomsHref =
     checkIn && checkOut
       ? `/rooms?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(
@@ -115,6 +121,7 @@ export default function BookingForm({
   const canContinue =
     Boolean(profile) &&
     Boolean(availability?.isAvailable) &&
+    safeRoomCount <= maxBookableRooms &&
     nights > 0 &&
     totalPrice > 0 &&
     !availabilityLoading;
@@ -166,6 +173,14 @@ export default function BookingForm({
     };
   }, [checkIn, checkOut, nights, room.id]);
 
+  useEffect(() => {
+    if (!availability?.availableRooms) return;
+
+    setRoomCount((current) =>
+      Math.min(Math.max(current, 1), availability.availableRooms)
+    );
+  }, [availability?.availableRooms]);
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -195,6 +210,11 @@ export default function BookingForm({
       return;
     }
 
+    if (safeRoomCount > maxBookableRooms) {
+      setError(`ห้องว่างเหลือ ${maxBookableRooms} ห้อง กรุณาลดจำนวนห้อง`);
+      return;
+    }
+
     sessionStorage.setItem(
       "gorillaBookingDraft",
       JSON.stringify({
@@ -203,6 +223,7 @@ export default function BookingForm({
         checkOut,
         nights,
         guests: 1,
+        roomCount: safeRoomCount,
         customerName: customerName.trim(),
         phone: phone.trim(),
         note: note.trim(),
@@ -291,6 +312,56 @@ export default function BookingForm({
                 กรุณากลับไปเลือกวันที่จากหน้าห้องพักก่อนทำรายการจอง
               </div>
             )}
+          </div>
+
+          <div className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200 sm:p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+                <BedDouble size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-950">
+                  จำนวนห้องที่ต้องการ
+                </h3>
+                <p className="text-sm text-slate-500">
+                  เลือกได้ไม่เกินจำนวนห้องว่างในวันที่เลือก
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldShell label="จำนวนห้อง" required>
+                <BedDouble
+                  size={20}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <select
+                  value={safeRoomCount}
+                  onChange={(event) => setRoomCount(Number(event.target.value))}
+                  disabled={!maxBookableRooms}
+                  className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  {Array.from(
+                    { length: Math.max(maxBookableRooms, 1) },
+                    (_, index) => index + 1
+                  ).map((count) => (
+                    <option key={count} value={count}>
+                      {count} ห้อง
+                    </option>
+                  ))}
+                </select>
+              </FieldShell>
+
+              <SummaryCard
+                dark
+                label="ราคาห้องรวม"
+                value={formatCurrency(totalPrice)}
+              />
+            </div>
+
+            <p className="mt-3 text-xs font-bold text-slate-500">
+              ห้องว่างตอนนี้ {maxBookableRooms} ห้อง
+            </p>
           </div>
 
           <div className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200 sm:p-5">
@@ -408,6 +479,11 @@ export default function BookingForm({
                 ? "กำลังเช็ก"
                 : `${availability?.availableRooms ?? 0} ห้อง`
             }
+          />
+          <InfoRow
+            icon={BedDouble}
+            label="จำนวนที่จอง"
+            value={`${safeRoomCount} ห้อง`}
           />
           <InfoRow
             icon={Wallet}

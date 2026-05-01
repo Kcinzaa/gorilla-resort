@@ -25,6 +25,7 @@ type SuccessInfo = {
   checkIn: string;
   checkOut: string;
   guests: string;
+  roomCount: string;
   totalPrice: string;
   depositAmount: string;
   paymentStatus: string;
@@ -98,6 +99,7 @@ export default function BookingSuccessClient() {
     checkIn: "",
     checkOut: "",
     guests: "",
+    roomCount: "",
     totalPrice: "",
     depositAmount: "",
     paymentStatus: "",
@@ -116,6 +118,7 @@ export default function BookingSuccessClient() {
       checkIn: params.get("checkIn") || "",
       checkOut: params.get("checkOut") || "",
       guests: params.get("guests") || "",
+      roomCount: params.get("roomCount") || "1",
       totalPrice: params.get("totalPrice") || "",
       depositAmount: params.get("depositAmount") || "",
       paymentStatus: params.get("paymentStatus") || "PENDING",
@@ -334,6 +337,18 @@ export default function BookingSuccessClient() {
                   </p>
                   <p className="mt-1 text-lg font-black text-slate-950">
                     {nights > 0 ? `${nights} คืน` : "-"}
+                  </p>
+                </div>
+
+                <div className="rounded-[1.5rem] bg-slate-50 p-5 ring-1 ring-slate-200">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 ring-1 ring-slate-200">
+                    <BedDouble size={24} className="text-slate-700" />
+                  </div>
+                  <p className="mt-4 text-xs font-black uppercase tracking-wide text-slate-500">
+                    จำนวนห้อง
+                  </p>
+                  <p className="mt-1 text-lg font-black text-slate-950">
+                    {info.roomCount || "1"} ห้อง
                   </p>
                 </div>
               </div>

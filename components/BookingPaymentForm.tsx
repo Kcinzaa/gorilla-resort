@@ -32,6 +32,7 @@ type BookingDraft = {
   checkOut: string;
   nights: number;
   guests: number;
+  roomCount?: number;
   customerName?: string;
   phone: string;
   note: string;
@@ -71,6 +72,7 @@ export default function BookingPaymentForm() {
     process.env.NEXT_PUBLIC_RESORT_ACCOUNT_NAME || "ปราณี ศรีคำ";
 
   const paymentAmount = useMemo(() => draft?.totalPrice || 0, [draft]);
+  const roomCount = Math.max(Number(draft?.roomCount || 1), 1);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("gorillaBookingDraft");
@@ -194,6 +196,7 @@ export default function BookingPaymentForm() {
           checkIn: draft.checkIn,
           checkOut: draft.checkOut,
           guests: draft.guests,
+          roomCount,
           phone: draft.phone,
           note: draft.note,
           paymentMethod,
@@ -219,6 +222,7 @@ export default function BookingPaymentForm() {
         checkIn: booking?.checkIn || draft.checkIn,
         checkOut: booking?.checkOut || draft.checkOut,
         guests: String(booking?.guests || draft.guests),
+        roomCount: String(booking?.roomCount || roomCount),
         totalPrice: String(booking?.totalPrice || draft.totalPrice),
         depositAmount: String(booking?.depositAmount || draft.totalPrice),
         paymentStatus: booking?.paymentStatus || "PENDING",
@@ -435,6 +439,7 @@ export default function BookingPaymentForm() {
             label="ชื่อ นามสกุล"
             value={draft.customerName || draft.profile.displayName || "-"}
           />
+          <SideRow icon={BedDouble} label="จำนวนห้อง" value={`${roomCount} ห้อง`} />
           <SideRow icon={ReceiptText} label="จำนวนคืน" value={`${draft.nights} คืน`} />
         </div>
       </aside>

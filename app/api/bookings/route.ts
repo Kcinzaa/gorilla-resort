@@ -47,6 +47,51 @@ function calculateDeposit(totalPrice: number) {
   return totalPrice;
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isRoomCountColumnError(error: unknown) {
+  return getErrorMessage(error).includes("roomCount");
+}
+
+async function getBookedRoomCount({
+  roomTypeId,
+  checkIn,
+  checkOut,
+}: {
+  roomTypeId: number;
+  checkIn: Date;
+  checkOut: Date;
+}) {
+  const where = {
+    roomTypeId,
+    status: {
+      in: ["PENDING", "CONFIRMED"],
+    },
+    checkIn: {
+      lt: checkOut,
+    },
+    checkOut: {
+      gt: checkIn,
+    },
+  };
+
+  try {
+    const result = await prisma.booking.aggregate({
+      where,
+      _sum: {
+        roomCount: true,
+      },
+    });
+
+    return result._sum.roomCount ?? 0;
+  } catch (error) {
+    if (!isRoomCountColumnError(error)) throw error;
+    return prisma.booking.count({ where });
+  }
+}
+
 async function getAvailableRooms({
   roomTypeId,
   checkIn,
@@ -72,19 +117,10 @@ async function getAvailableRooms({
     };
   }
 
-  const bookedRooms = await prisma.booking.count({
-    where: {
-      roomTypeId,
-      status: {
-        in: ["PENDING", "CONFIRMED"],
-      },
-      checkIn: {
-        lt: checkOut,
-      },
-      checkOut: {
-        gt: checkIn,
-      },
-    },
+  const bookedRooms = await getBookedRoomCount({
+    roomTypeId,
+    checkIn,
+    checkOut,
   });
 
   const totalRooms = roomType.totalRooms ?? 1;
@@ -171,6 +207,7 @@ export async function POST(request: Request) {
 
     const roomTypeId = Number(body.roomTypeId);
     const guests = Number(body.guests);
+    const roomCount = Math.max(Number(body.roomCount || 1), 1);
 
     const checkIn = parseDate(body.checkIn);
     const checkOut = parseDate(body.checkOut);
@@ -281,6 +318,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (roomCount > availableRooms) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `à¸«à¹‰à¸­à¸‡à¸§à¹ˆà¸²à¸‡à¹€à¸«à¸¥à¸·à¸­ ${availableRooms} à¸«à¹‰à¸­à¸‡ à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸ˆà¸­à¸‡ ${roomCount} à¸«à¹‰à¸­à¸‡à¹„à¸”à¹‰`,
+        },
+        { status: 409 }
+      );
+    }
+
     const nights = calculateNights(checkIn, checkOut);
 
     if (nights <= 0) {
@@ -293,7 +340,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const totalPrice = nights * roomType.pricePerNight;
+    const totalPrice = nights * roomType.pricePerNight * roomCount;
     const depositAmount = calculateDeposit(totalPrice);
     const bookingCode = createBookingCode();
 
@@ -310,6 +357,7 @@ export async function POST(request: Request) {
         checkIn,
         checkOut,
         guests,
+        roomCount,
         totalPrice,
         
         status: "PENDING",

@@ -39,6 +39,7 @@ type BookingItem = {
   checkIn: string;
   checkOut: string;
   guests: number;
+  roomCount?: number | null;
   totalPrice?: number | null;
   status: BookingStatus | string;
   createdAt?: string;
@@ -637,7 +638,9 @@ export default function MyBookingsPage() {
                   const estimatedTotal =
                     booking.totalPrice ||
                     (nights > 0
-                      ? nights * (booking.roomType?.pricePerNight || 0)
+                      ? nights *
+                        (booking.roomType?.pricePerNight || 0) *
+                        Math.max(Number(booking.roomCount || 1), 1)
                       : 0);
 
                   return (

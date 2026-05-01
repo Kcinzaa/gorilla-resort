@@ -36,6 +36,7 @@ type BookingItem = {
   checkIn: string;
   checkOut: string;
   guests: number;
+  roomCount?: number | null;
   totalPrice?: number | null;
   status: BookingStatus | string;
   createdAt?: string;
@@ -208,7 +209,11 @@ export default function MyBookingDetailPage() {
 
     return (
       booking.totalPrice ||
-      (nights > 0 ? nights * (booking.roomType?.pricePerNight || 0) : 0)
+      (nights > 0
+        ? nights *
+          (booking.roomType?.pricePerNight || 0) *
+          Math.max(Number(booking.roomCount || 1), 1)
+        : 0)
     );
   }, [booking, nights]);
 
@@ -387,6 +392,10 @@ export default function MyBookingDetailPage() {
                 <InfoCard label="วันออก" value={formatDate(booking.checkOut)} />
                 <InfoCard label="จำนวนคืน" value={`${nights} คืน`} />
                 <InfoCard label="ชื่อ นามสกุล" value={booking.displayName || "-"} />
+                <InfoCard
+                  label="จำนวนห้อง"
+                  value={`${Math.max(Number(booking.roomCount || 1), 1)} ห้อง`}
+                />
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">

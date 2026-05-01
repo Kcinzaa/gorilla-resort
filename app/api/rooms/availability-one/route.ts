@@ -16,6 +16,10 @@ function isReservedRoomsColumnError(error: unknown) {
   return getErrorMessage(error).includes("reservedRooms");
 }
 
+function isRoomCountColumnError(error: unknown) {
+  return getErrorMessage(error).includes("roomCount");
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -69,8 +73,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const bookedRooms = await prisma.booking.count({
-      where: {
+    const bookingWhere = {
         roomTypeId,
         status: {
           in: ["PENDING", "CONFIRMED"],
@@ -81,8 +84,21 @@ export async function GET(request: Request) {
         checkOut: {
           gt: checkIn,
         },
-      },
-    });
+      };
+
+    let bookedRooms = 0;
+    try {
+      const result = await prisma.booking.aggregate({
+        where: bookingWhere,
+        _sum: {
+          roomCount: true,
+        },
+      });
+      bookedRooms = result._sum.roomCount ?? 0;
+    } catch (error) {
+      if (!isRoomCountColumnError(error)) throw error;
+      bookedRooms = await prisma.booking.count({ where: bookingWhere });
+    }
 
     const totalRooms = Number(roomType.totalRooms ?? 1);
     const reservedRooms = Math.min(
