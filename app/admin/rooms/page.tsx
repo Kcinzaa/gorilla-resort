@@ -36,6 +36,7 @@ type RoomItem = {
   pricePerNight: number;
   capacity: number;
   totalRooms?: number | null;
+  reservedRooms?: number | null;
   imageUrl?: string | null;
   isActive?: boolean;
   createdAt?: string;
@@ -49,6 +50,7 @@ type RoomForm = {
   pricePerNight: string;
   capacity: string;
   totalRooms: string;
+  reservedRooms: string;
   imageUrl: string;
   isActive: boolean;
 };
@@ -59,6 +61,7 @@ const emptyForm: RoomForm = {
   pricePerNight: "",
   capacity: "2",
   totalRooms: "1",
+  reservedRooms: "0",
   imageUrl: "",
   isActive: true,
 };
@@ -222,6 +225,7 @@ export default function AdminRoomsPage() {
       pricePerNight: String(room.pricePerNight || ""),
       capacity: String(room.capacity || "2"),
       totalRooms: String(room.totalRooms ?? 1),
+      reservedRooms: String(room.reservedRooms ?? 0),
       imageUrl: room.imageUrl || "",
       isActive: room.isActive !== false,
     });
@@ -253,6 +257,14 @@ export default function AdminRoomsPage() {
       return "กรุณากรอกจำนวนห้องให้ถูกต้อง";
     }
 
+    if (Number(form.reservedRooms || 0) < 0) {
+      return "จำนวนห้องที่ล็อกไว้ต้องไม่ติดลบ";
+    }
+
+    if (Number(form.reservedRooms || 0) > Number(form.totalRooms)) {
+      return "จำนวนห้องที่ล็อกไว้ต้องไม่มากกว่าจำนวนห้องทั้งหมด";
+    }
+
     return "";
   }
 
@@ -279,6 +291,7 @@ export default function AdminRoomsPage() {
         pricePerNight: Number(form.pricePerNight),
         capacity: Number(form.capacity),
         totalRooms: Number(form.totalRooms),
+        reservedRooms: Number(form.reservedRooms || 0),
         imageUrl: form.imageUrl.trim(),
         isActive: form.isActive,
       };
@@ -330,6 +343,7 @@ export default function AdminRoomsPage() {
           pricePerNight: room.pricePerNight,
           capacity: room.capacity,
           totalRooms: room.totalRooms ?? 1,
+          reservedRooms: room.reservedRooms ?? 0,
           imageUrl: room.imageUrl || "",
           isActive: room.isActive === false,
         }),
@@ -690,7 +704,7 @@ export default function AdminRoomsPage() {
                 </div>
 
                 <div className="p-5">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
                       <div className="flex items-center gap-2 text-slate-500">
                         <Users size={16} />
@@ -704,10 +718,20 @@ export default function AdminRoomsPage() {
                     <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
                       <div className="flex items-center gap-2 text-slate-500">
                         <BedDouble size={16} />
-                        <p className="text-xs font-bold">จำนวน</p>
+                        <p className="text-xs font-bold">ทั้งหมด</p>
                       </div>
                       <p className="mt-2 font-black text-slate-950">
                         {room.totalRooms ?? 1} ห้อง
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-100">
+                      <div className="flex items-center gap-2 text-amber-700">
+                        <ShieldCheck size={16} />
+                        <p className="text-xs font-bold">ล็อกไว้</p>
+                      </div>
+                      <p className="mt-2 font-black text-amber-700">
+                        {room.reservedRooms ?? 0} ห้อง
                       </p>
                     </div>
 
@@ -849,7 +873,7 @@ export default function AdminRoomsPage() {
                 />
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     ราคาต่อคืน <span className="text-red-500">*</span>
@@ -903,6 +927,27 @@ export default function AdminRoomsPage() {
                     }
                     className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
                   />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    ห้องที่ล็อกไว้
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.reservedRooms}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        reservedRooms: event.target.value,
+                      }))
+                    }
+                    className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-100"
+                  />
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    เช่น ลูกค้ารายเดือน 6 ห้อง
+                  </p>
                 </div>
               </div>
 

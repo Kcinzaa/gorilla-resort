@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
     const roomType = await prisma.roomType.findFirst({
       where: { id: roomTypeId, isActive: true },
-      select: { id: true, totalRooms: true },
+      select: { id: true, totalRooms: true, reservedRooms: true },
     });
 
     if (!roomType) {
@@ -70,7 +70,9 @@ export async function GET(request: Request) {
     });
 
     const totalRooms = Number(roomType.totalRooms ?? 1);
-    const availableRooms = Math.max(totalRooms - bookedRooms, 0);
+    const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);
+    const heldRooms = bookedRooms + reservedRooms;
+    const availableRooms = Math.max(totalRooms - heldRooms, 0);
 
     return NextResponse.json({
       success: true,
@@ -79,7 +81,9 @@ export async function GET(request: Request) {
         checkIn: checkInParam,
         checkOut: checkOutParam,
         totalRooms,
-        bookedRooms,
+        reservedRooms,
+        realBookedRooms: bookedRooms,
+        bookedRooms: heldRooms,
         availableRooms,
         isAvailable: availableRooms > 0,
       },

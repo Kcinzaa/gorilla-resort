@@ -53,6 +53,7 @@ type RoomType = {
   imageUrl?: string | null;
   isActive?: boolean;
   bookedRooms?: number;
+  reservedRooms?: number;
   availableRooms?: number;
   isAvailable?: boolean;
 };
@@ -487,11 +488,16 @@ function RoomsContent() {
                     </Link>
 
                     <div className="p-5">
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <RoomStat
+                          icon={BedDouble}
+                          label="ทั้งหมด"
+                          value={`${room.totalRooms ?? 0} ห้อง`}
+                        />
                         <RoomStat
                           icon={Users}
-                          label="พักได้"
-                          value={`${room.capacity} คน`}
+                          label="จองแล้ว"
+                          value={`${room.bookedRooms ?? 0} ห้อง`}
                         />
                         <RoomStat
                           icon={BedDouble}

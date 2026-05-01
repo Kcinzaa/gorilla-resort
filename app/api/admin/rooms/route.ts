@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const pricePerNight = cleanNumber(body.pricePerNight);
     const capacity = cleanNumber(body.capacity);
     const totalRooms = cleanNumber(body.totalRooms || 1);
+    const reservedRooms = Math.max(cleanNumber(body.reservedRooms || 0), 0);
     const imageUrl = cleanString(body.imageUrl);
     const isActive = body.isActive !== false;
 
@@ -107,6 +108,16 @@ export async function POST(request: Request) {
       );
     }
 
+    if (reservedRooms > totalRooms) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "จำนวนห้องที่ล็อกไว้ต้องไม่มากกว่าจำนวนห้องทั้งหมด",
+        },
+        { status: 400 }
+      );
+    }
+
     const room = await prisma.roomType.create({
       data: {
         name,
@@ -114,6 +125,7 @@ export async function POST(request: Request) {
         pricePerNight,
         capacity,
         totalRooms,
+        reservedRooms,
         imageUrl,
         isActive,
       },
@@ -157,6 +169,7 @@ export async function PATCH(request: Request) {
     const pricePerNight = cleanNumber(body.pricePerNight);
     const capacity = cleanNumber(body.capacity);
     const totalRooms = cleanNumber(body.totalRooms || 1);
+    const reservedRooms = Math.max(cleanNumber(body.reservedRooms || 0), 0);
     const imageUrl = cleanString(body.imageUrl);
     const isActive = body.isActive !== false;
 
@@ -210,6 +223,16 @@ export async function PATCH(request: Request) {
       );
     }
 
+    if (reservedRooms > totalRooms) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "จำนวนห้องที่ล็อกไว้ต้องไม่มากกว่าจำนวนห้องทั้งหมด",
+        },
+        { status: 400 }
+      );
+    }
+
     const room = await prisma.roomType.update({
       where: {
         id,
@@ -220,6 +243,7 @@ export async function PATCH(request: Request) {
         pricePerNight,
         capacity,
         totalRooms,
+        reservedRooms,
         imageUrl,
         isActive,
       },

@@ -88,12 +88,14 @@ async function getAvailableRooms({
   });
 
   const totalRooms = roomType.totalRooms ?? 1;
-  const availableRooms = Math.max(totalRooms - bookedRooms, 0);
+  const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);
+  const availableRooms = Math.max(totalRooms - reservedRooms - bookedRooms, 0);
 
   return {
     roomType,
     totalRooms,
-    bookedRooms,
+    reservedRooms,
+    bookedRooms: reservedRooms + bookedRooms,
     availableRooms,
   };
 }

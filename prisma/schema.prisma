@@ -24,6 +24,7 @@ model RoomType {
   pricePerNight Int
   capacity      Int
   totalRooms    Int     @default(1)
+  reservedRooms Int     @default(0)
   imageUrl      String?
   isActive      Boolean @default(true)
 

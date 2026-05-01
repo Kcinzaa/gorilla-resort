@@ -8,6 +8,7 @@ type RoomTypeItem = {
   pricePerNight: number;
   capacity: number;
   totalRooms: number | null;
+  reservedRooms: number | null;
   imageUrl: string | null;
   isActive: boolean;
   createdAt: Date;
@@ -97,7 +98,9 @@ export async function GET(request: Request) {
         });
 
         const totalRooms = Number(roomType.totalRooms ?? 1);
-        const availableRooms = Math.max(totalRooms - overlappingBookings, 0);
+        const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);
+        const bookedRooms = reservedRooms + overlappingBookings;
+        const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 
         return {
           id: roomType.id,
@@ -106,8 +109,10 @@ export async function GET(request: Request) {
           pricePerNight: roomType.pricePerNight,
           capacity: roomType.capacity,
           totalRooms,
+          reservedRooms,
           imageUrl: roomType.imageUrl,
-          bookedRooms: overlappingBookings,
+          realBookedRooms: overlappingBookings,
+          bookedRooms,
           availableRooms,
           isAvailable: availableRooms > 0,
         };

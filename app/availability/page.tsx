@@ -28,6 +28,7 @@ type AvailabilityRoom = {
   pricePerNight: number;
   capacity: number;
   totalRooms: number;
+  reservedRooms?: number;
   imageUrl?: string | null;
   bookedRooms: number;
   availableRooms: number;
@@ -442,20 +443,30 @@ export default function AvailabilityPage() {
                   </div>
 
                   <div className="p-5">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
                         <div className="flex items-center gap-2 text-slate-500">
-                          <Users size={16} />
-                          <p className="text-xs font-bold">พักได้</p>
+                          <BedDouble size={16} />
+                          <p className="text-xs font-bold">ทั้งหมด</p>
                         </div>
                         <p className="mt-2 font-black text-slate-950">
-                          {room.capacity} คน
+                          {room.totalRooms} ห้อง
                         </p>
                       </div>
 
                       <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
                         <div className="flex items-center gap-2 text-slate-500">
-                          <BedDouble size={16} />
+                          <Users size={16} />
+                          <p className="text-xs font-bold">จองแล้ว</p>
+                        </div>
+                        <p className="mt-2 font-black text-slate-950">
+                          {room.bookedRooms} ห้อง
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <CheckCircle2 size={16} />
                           <p className="text-xs font-bold">ว่าง</p>
                         </div>
                         <p className="mt-2 font-black text-slate-950">

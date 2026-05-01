@@ -25,6 +25,7 @@ export async function GET() {
         pricePerNight: true,
         capacity: true,
         totalRooms: true,
+        reservedRooms: true,
         imageUrl: true,
         isActive: true,
       },

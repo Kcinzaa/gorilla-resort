@@ -8,6 +8,7 @@ type AvailabilityRoom = {
   pricePerNight: number;
   capacity: number;
   totalRooms: number | null;
+  reservedRooms: number | null;
   imageUrl: string | null;
   isActive: boolean;
 };
@@ -94,6 +95,7 @@ export async function GET(request: Request) {
         pricePerNight: true,
         capacity: true,
         totalRooms: true,
+        reservedRooms: true,
         imageUrl: true,
         isActive: true,
       },
@@ -136,12 +138,16 @@ export async function GET(request: Request) {
 
     const data = rooms.map((room: AvailabilityRoom) => {
       const totalRooms = Number(room.totalRooms || 0);
-      const bookedRooms = bookedCountByRoomType[room.id] || 0;
+      const reservedRooms = Math.min(Number(room.reservedRooms || 0), totalRooms);
+      const realBookedRooms = bookedCountByRoomType[room.id] || 0;
+      const bookedRooms = reservedRooms + realBookedRooms;
       const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 
       return {
         ...room,
         totalRooms,
+        reservedRooms,
+        realBookedRooms,
         bookedRooms,
         availableRooms,
         isAvailable: availableRooms > 0,
@@ -155,7 +161,9 @@ export async function GET(request: Request) {
         checkIn: checkInParam,
         checkOut: checkOutParam,
         totalRoomTypes: rooms.length,
-        totalHeldBookings: confirmedBookings.length,
+        totalHeldBookings:
+          confirmedBookings.length +
+          rooms.reduce((sum, room) => sum + Number(room.reservedRooms || 0), 0),
       },
     });
   } catch (error) {
