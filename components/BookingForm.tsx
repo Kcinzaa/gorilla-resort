@@ -91,7 +91,7 @@ export default function BookingForm({
 
   const [checkIn] = useState(initialCheckIn);
   const [checkOut] = useState(initialCheckOut);
-  const [guests, setGuests] = useState("1");
+  const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [availability, setAvailability] = useState<AvailabilityResult | null>(
@@ -175,13 +175,8 @@ export default function BookingForm({
       return;
     }
 
-    if (!guests || Number(guests) <= 0) {
-      setError("กรุณาระบุจำนวนผู้เข้าพัก");
-      return;
-    }
-
-    if (Number(guests) > room.capacity) {
-      setError(`ห้องนี้รองรับได้สูงสุด ${room.capacity} คน`);
+    if (!customerName.trim()) {
+      setError("กรุณากรอกชื่อและนามสกุล");
       return;
     }
 
@@ -207,7 +202,8 @@ export default function BookingForm({
         checkIn,
         checkOut,
         nights,
-        guests: Number(guests),
+        guests: 1,
+        customerName: customerName.trim(),
         phone: phone.trim(),
         note: note.trim(),
         totalPrice,
@@ -311,22 +307,18 @@ export default function BookingForm({
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FieldShell label="จำนวนผู้เข้าพัก" required>
-                <Users
+              <FieldShell label="ชื่อและนามสกุล" required>
+                <User
                   size={20}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                 />
                 <input
-                  type="number"
-                  min="1"
-                  max={room.capacity}
-                  value={guests}
-                  onChange={(event) => setGuests(event.target.value)}
-                  className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+                  type="text"
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  placeholder="เช่น สมชาย ใจดี"
+                  className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
                 />
-                <p className="mt-2 text-xs font-semibold text-slate-500">
-                  ห้องนี้รองรับได้สูงสุด {room.capacity} คน
-                </p>
               </FieldShell>
 
               <FieldShell label="เบอร์โทรศัพท์" required>
@@ -357,6 +349,10 @@ export default function BookingForm({
               />
             </div>
           </div>
+
+          <p className="px-1 text-sm font-bold text-red-500">
+            *กรุณากรอกข้อมูลให้ครบถ้วนก่อนชำระเงิน
+          </p>
 
           <button
             type="submit"

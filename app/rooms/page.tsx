@@ -267,35 +267,44 @@ function RoomsContent() {
 
         <section className="mt-5 overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem]">
           <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="bg-slate-950 p-6 text-white sm:p-8 lg:p-10">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white ring-1 ring-white/10">
-                <SearchCheck size={18} className="text-emerald-300" />
-                เลือกวันเข้าพักก่อนจอง
-              </div>
-              <h1 className="mt-5 text-4xl font-black leading-tight text-white sm:text-5xl">
-                ค้นหาห้องว่างของ Gorilla Resort
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300">
-                เลือกวันเข้าพักและวันออก ระบบจะแสดงประเภทห้องพร้อมจำนวนห้องที่ว่างทันที
-                ถ้าห้องเต็มจะกดจองไม่ได้
-              </p>
+            <div
+              className="relative min-h-[420px] overflow-hidden bg-slate-950 p-6 text-white sm:p-8 lg:min-h-full lg:p-10"
+              style={{
+                backgroundImage: "url('/images/S__37019660_0.jpg')",
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-950/20" />
+              <div className="relative flex h-full flex-col justify-end">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-black text-white ring-1 ring-white/20 backdrop-blur">
+                  <SearchCheck size={18} className="text-emerald-300" />
+                  เลือกวันเข้าพักก่อนจอง
+                </div>
+                <h1 className="mt-5 text-4xl font-black leading-tight text-white sm:text-5xl">
+                  ค้นหาห้องว่างของ Gorilla Resort
+                </h1>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-slate-100">
+                  เลือกวันเข้าพักและวันออก ระบบจะแสดงห้องว่างพร้อมปุ่มจองทันที
+                </p>
 
-              <div className="mt-6 grid grid-cols-3 gap-3">
-                <MiniStat label="ประเภทห้อง" value={String(activeRooms.length)} />
-                <MiniStat
-                  label="ราคาเริ่มต้น"
-                  value={
-                    activeRooms.length
-                      ? formatCurrency(
-                          Math.min(...activeRooms.map((room) => room.pricePerNight))
-                        )
-                      : "-"
-                  }
-                />
-                <MiniStat
-                  label="ห้องว่าง"
-                  value={hasSelectedDates ? String(totalAvailableRooms) : "-"}
-                />
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  <MiniStat label="ประเภทห้อง" value={String(activeRooms.length)} />
+                  <MiniStat
+                    label="ราคาเริ่มต้น"
+                    value={
+                      activeRooms.length
+                        ? formatCurrency(
+                            Math.min(...activeRooms.map((room) => room.pricePerNight))
+                          )
+                        : "-"
+                    }
+                  />
+                  <MiniStat
+                    label="ห้องว่าง"
+                    value={hasSelectedDates ? String(totalAvailableRooms) : "-"}
+                  />
+                </div>
               </div>
             </div>
 
@@ -333,8 +342,8 @@ function RoomsContent() {
                 </div>
               )}
 
-              <div className="mt-5 rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                {hasSelectedDates ? (
+              {hasSelectedDates && (
+                <div className="mt-5 rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-xs font-black uppercase tracking-wide text-slate-500">
@@ -348,20 +357,8 @@ function RoomsContent() {
                       ว่างรวม {totalAvailableRooms} ห้อง
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-start gap-3">
-                    <CalendarDays size={22} className="mt-1 text-slate-400" />
-                    <div>
-                      <p className="font-black text-slate-950">
-                        เลือกวันที่เพื่อดูห้องว่าง
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-slate-500">
-                        หน้าเลือกห้องจะแสดงผลหลังเลือกวันเข้าพักและวันออกครบแล้ว
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -412,14 +409,6 @@ function RoomsContent() {
               icon={BedDouble}
               title="ยังไม่มีห้องพักที่เปิดให้จอง"
               description="ตอนนี้ยังไม่มีประเภทห้องพักที่เปิดใช้งาน กรุณาติดต่อรีสอร์ทหรือลองใหม่ภายหลัง"
-            />
-          )}
-
-          {!loading && !error && activeRooms.length > 0 && !hasSelectedDates && (
-            <EmptyState
-              icon={CalendarDays}
-              title="เลือกวันที่ก่อนดูห้องว่าง"
-              description="ระบบจะแสดงห้องพัก จำนวนห้องว่าง และปุ่มจอง หลังเลือกวันเข้าพักและวันออกครบแล้ว"
             />
           )}
 

@@ -32,6 +32,7 @@ type BookingDraft = {
   checkOut: string;
   nights: number;
   guests: number;
+  customerName?: string;
   phone: string;
   note: string;
   totalPrice: number;
@@ -187,7 +188,7 @@ export default function BookingPaymentForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lineUserId: draft.profile.userId,
-          displayName: draft.profile.displayName,
+          displayName: draft.customerName || draft.profile.displayName,
           pictureUrl: draft.profile.pictureUrl || "",
           roomTypeId: draft.room.id,
           checkIn: draft.checkIn,
