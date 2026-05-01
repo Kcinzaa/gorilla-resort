@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -24,6 +24,24 @@ import {
 } from "lucide-react";
 
 const DATE_STORAGE_KEY = "gorillaRoomSearchDates";
+
+function RoomsLoadingShell() {
+  return (
+    <main className="min-h-screen bg-slate-100 text-slate-950">
+      <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
+        <Navbar />
+        <div className="mt-5 flex min-h-[360px] flex-col items-center justify-center rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
+            <Loader2 size={36} className="animate-spin" />
+          </div>
+          <h2 className="mt-5 text-2xl font-black text-slate-950">
+            กำลังโหลดหน้าห้องพัก
+          </h2>
+        </div>
+      </section>
+    </main>
+  );
+}
 
 type RoomType = {
   id: number;
@@ -59,6 +77,14 @@ function formatThaiDate(value: string) {
 }
 
 export default function RoomsPage() {
+  return (
+    <Suspense fallback={<RoomsLoadingShell />}>
+      <RoomsContent />
+    </Suspense>
+  );
+}
+
+function RoomsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [rooms, setRooms] = useState<RoomType[]>([]);
