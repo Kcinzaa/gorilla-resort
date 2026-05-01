@@ -106,6 +106,12 @@ export default function BookingForm({
     [checkIn, checkOut]
   );
   const totalPrice = nights * room.pricePerNight;
+  const roomsHref =
+    checkIn && checkOut
+      ? `/rooms?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(
+          checkOut
+        )}`
+      : "/rooms";
   const canContinue =
     Boolean(profile) &&
     Boolean(availability?.isAvailable) &&
@@ -218,7 +224,7 @@ export default function BookingForm({
       <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-6 lg:p-8">
         <div className="mb-6">
           <Link
-            href="/rooms"
+            href={roomsHref}
             className="mb-5 inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
           >
             <ArrowLeft size={16} className="text-slate-700" />

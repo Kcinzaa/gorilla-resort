@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import {
   AlertCircle,
@@ -21,6 +22,8 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
+
+const DATE_STORAGE_KEY = "gorillaRoomSearchDates";
 
 type RoomType = {
   id: number;
@@ -56,6 +59,8 @@ function formatThaiDate(value: string) {
 }
 
 export default function RoomsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [rooms, setRooms] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
@@ -110,7 +115,37 @@ export default function RoomsPage() {
   }
 
   useEffect(() => {
-    fetchRooms();
+    const queryCheckIn = searchParams.get("checkIn") || "";
+    const queryCheckOut = searchParams.get("checkOut") || "";
+    let storedCheckIn = "";
+    let storedCheckOut = "";
+
+    try {
+      const stored = window.sessionStorage.getItem(DATE_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as {
+          checkIn?: string;
+          checkOut?: string;
+        };
+        storedCheckIn = parsed.checkIn || "";
+        storedCheckOut = parsed.checkOut || "";
+      }
+    } catch {
+      window.sessionStorage.removeItem(DATE_STORAGE_KEY);
+    }
+
+    const nextCheckIn = queryCheckIn || storedCheckIn;
+    const nextCheckOut = queryCheckOut || storedCheckOut;
+
+    setCheckIn(nextCheckIn);
+    setCheckOut(nextCheckOut);
+
+    if (nextCheckIn && nextCheckOut) {
+      fetchAvailability(nextCheckIn, nextCheckOut);
+    } else {
+      fetchRooms();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchAvailability(
@@ -157,12 +192,42 @@ export default function RoomsPage() {
       setAvailabilityError("เกิดข้อผิดพลาดในการเช็กห้องว่าง");
     } finally {
       setAvailabilityLoading(false);
+      setLoading(false);
     }
+  }
+
+  function syncSelectedDates(nextCheckIn: string, nextCheckOut: string) {
+    const params = new URLSearchParams(window.location.search);
+
+    if (nextCheckIn) {
+      params.set("checkIn", nextCheckIn);
+    } else {
+      params.delete("checkIn");
+    }
+
+    if (nextCheckOut) {
+      params.set("checkOut", nextCheckOut);
+    } else {
+      params.delete("checkOut");
+    }
+
+    if (nextCheckIn && nextCheckOut) {
+      window.sessionStorage.setItem(
+        DATE_STORAGE_KEY,
+        JSON.stringify({ checkIn: nextCheckIn, checkOut: nextCheckOut })
+      );
+    } else {
+      window.sessionStorage.removeItem(DATE_STORAGE_KEY);
+    }
+
+    const nextUrl = params.toString() ? `/rooms?${params.toString()}` : "/rooms";
+    router.replace(nextUrl, { scroll: false });
   }
 
   function handleDateChange(nextCheckIn: string, nextCheckOut: string) {
     setCheckIn(nextCheckIn);
     setCheckOut(nextCheckOut);
+    syncSelectedDates(nextCheckIn, nextCheckOut);
 
     if (nextCheckIn && nextCheckOut) {
       fetchAvailability(nextCheckIn, nextCheckOut);
@@ -348,7 +413,7 @@ export default function RoomsPage() {
                     className="group overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:rounded-[2.5rem]"
                   >
                     <Link
-                      href={`/rooms/${room.id}`}
+                      href={`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}`}
                       className="block"
                       aria-label={`ดูรายละเอียดห้อง ${room.name}`}
                     >
@@ -427,7 +492,7 @@ export default function RoomsPage() {
 
                       <div className="mt-5 grid gap-3">
                         <Link
-                          href={`/rooms/${room.id}`}
+                          href={`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-800 transition hover:bg-slate-200"
                         >
                           <Eye size={18} className="text-slate-800" />

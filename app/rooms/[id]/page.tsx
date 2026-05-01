@@ -15,6 +15,10 @@ type PageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    checkIn?: string;
+    checkOut?: string;
+  }>;
 };
 
 function formatCurrency(amount: number) {
@@ -25,9 +29,18 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export default async function RoomDetailPage({ params }: PageProps) {
+export default async function RoomDetailPage({ params, searchParams }: PageProps) {
   const resolvedParams = await params;
+  const query = await searchParams;
   const roomId = Number(resolvedParams.id);
+  const checkIn = query.checkIn || "";
+  const checkOut = query.checkOut || "";
+  const hasDates = Boolean(checkIn && checkOut);
+  const roomsHref = hasDates
+    ? `/rooms?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(
+        checkOut
+      )}`
+    : "/rooms";
 
   if (!roomId || Number.isNaN(roomId)) {
     notFound();
@@ -79,7 +92,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
       <section className="mx-auto max-w-6xl px-3 py-4 sm:px-6 lg:px-8">
         <div className="mb-5 rounded-[2rem] bg-white p-3 shadow-sm ring-1 ring-slate-200 sm:p-4">
           <Link
-            href="/rooms"
+            href={roomsHref}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200"
           >
             <ArrowLeft size={18} className="text-slate-700" />
@@ -156,7 +169,13 @@ export default async function RoomDetailPage({ params }: PageProps) {
               </div>
 
               <Link
-                href={`/booking?roomTypeId=${room.id}`}
+                href={
+                  hasDates
+                    ? `/booking?roomTypeId=${room.id}&checkIn=${encodeURIComponent(
+                        checkIn
+                      )}&checkOut=${encodeURIComponent(checkOut)}`
+                    : `/booking?roomTypeId=${room.id}`
+                }
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
               >
                 <span className="text-white">จองห้องนี้</span>
@@ -179,7 +198,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
               </div>
 
               <Link
-                href="/rooms"
+                href={roomsHref}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
               >
                 <span className="text-white">ดูห้องทั้งหมด</span>
@@ -231,7 +250,13 @@ export default async function RoomDetailPage({ params }: PageProps) {
                       </div>
 
                       <Link
-                        href={`/rooms/${item.id}`}
+                        href={
+                          hasDates
+                            ? `/rooms/${item.id}?checkIn=${encodeURIComponent(
+                                checkIn
+                              )}&checkOut=${encodeURIComponent(checkOut)}`
+                            : `/rooms/${item.id}`
+                        }
                         className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white transition hover:bg-slate-800"
                         aria-label={`ดูรายละเอียด ${item.name}`}
                       >
