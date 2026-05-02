@@ -73,6 +73,28 @@ type RoomItem = {
   isActive?: boolean;
 };
 
+type CalendarRoomSummary = {
+  room: RoomItem;
+  bookings: BookingItem[];
+  totalRooms: number;
+  reservedRooms: number;
+  realBookedCount: number;
+  bookedCount: number;
+  availableCount: number;
+};
+
+type CalendarDaySummary = {
+  date: Date;
+  rooms: CalendarRoomSummary[];
+  totalRooms: number;
+  totalAvailable: number;
+  totalBooked: number;
+  totalCustomerBooked: number;
+  totalReserved: number;
+  isFull: boolean;
+  hasBooking: boolean;
+};
+
 type FetchResult = {
   success: boolean;
   data: unknown[];
@@ -189,6 +211,8 @@ export default function AdminDashboardPage() {
   const [newBookingNotice, setNewBookingNotice] = useState<BookingItem | null>(
     null
   );
+  const [selectedCalendarDay, setSelectedCalendarDay] =
+    useState<CalendarDaySummary | null>(null);
   const knownBookingIdsRef = useRef<Set<number>>(new Set());
   const hasLoadedBookingsRef = useRef(false);
 
@@ -343,7 +367,7 @@ export default function AdminDashboardPage() {
     });
   }, [activeRooms, activeScheduleBookings, scheduleDates]);
 
-  const monthlyCalendarDays = useMemo(() => {
+  const monthlyCalendarDays = useMemo<CalendarDaySummary[]>(() => {
     return scheduleDates.map((date) => {
       const rooms = activeRooms.map((room) => {
         const roomBookings = activeScheduleBookings.filter(
@@ -403,18 +427,21 @@ export default function AdminDashboardPage() {
   }, [activeRooms, activeScheduleBookings, scheduleDates]);
 
   function goToPreviousMonth() {
+    setSelectedCalendarDay(null);
     setCalendarMonth(
       (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1)
     );
   }
 
   function goToNextMonth() {
+    setSelectedCalendarDay(null);
     setCalendarMonth(
       (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1)
     );
   }
 
   function goToCurrentMonth() {
+    setSelectedCalendarDay(null);
     const today = new Date();
     setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
   }
@@ -995,10 +1022,12 @@ export default function AdminDashboardPage() {
                     const isToday = isSameCalendarDate(day.date, new Date());
 
                     return (
-                      <article
+                      <button
+                        type="button"
                         key={day.date.toISOString()}
+                        onClick={() => setSelectedCalendarDay(day)}
                         className={[
-                          "min-h-[260px] bg-white p-3",
+                          "min-h-[178px] bg-white p-3 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-emerald-100",
                           day.isFull
                             ? "border-t-4 border-red-400"
                             : day.hasBooking
@@ -1048,70 +1077,193 @@ export default function AdminDashboardPage() {
                           <SmallScheduleMetric label="รวม" value={day.totalBooked} />
                         </div>
 
-                        <div className="mt-3 grid gap-2">
-                          {day.rooms.map((roomDay) => {
-                            const roomIsFull = roomDay.availableCount <= 0;
-                            const roomHasBooking = roomDay.bookedCount > 0;
-
-                            return (
-                              <div
-                                key={roomDay.room.id}
-                                className={[
-                                  "rounded-2xl p-2 ring-1",
-                                  roomIsFull
-                                    ? "bg-red-50 ring-red-100"
-                                    : roomHasBooking
-                                      ? "bg-amber-50 ring-amber-100"
-                                      : "bg-emerald-50 ring-emerald-100",
-                                ].join(" ")}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="truncate text-xs font-black text-slate-950">
-                                    {roomDay.room.name}
-                                  </p>
-                                  <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs font-black text-slate-950 ring-1 ring-slate-200">
-                                    เหลือ {roomDay.availableCount}
-                                  </span>
-                                </div>
-                                <p className="mt-1 text-[11px] font-bold text-slate-500">
-                                  จอง {roomDay.realBookedCount} • ล็อก {roomDay.reservedRooms}
-                                </p>
-
-                                {roomDay.bookings.length > 0 && (
-                                  <div className="mt-2 grid gap-1">
-                                    {roomDay.bookings.slice(0, 2).map((booking) => (
-                                      <Link
-                                        key={booking.id}
-                                        href={`/admin/bookings/${booking.id}`}
-                                        className="rounded-xl bg-white px-2 py-1.5 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
-                                      >
-                                        <span className="block truncate font-black text-slate-950">
-                                          {booking.displayName || "ลูกค้า"} •{" "}
-                                          {Math.max(Number(booking.roomCount || 1), 1)} ห้อง
-                                        </span>
-                                        <span className="block truncate text-slate-500">
-                                          {booking.bookingCode || `#${booking.id}`}
-                                        </span>
-                                      </Link>
-                                    ))}
-
-                                    {roomDay.bookings.length > 2 && (
-                                      <p className="text-[11px] font-black text-slate-500">
-                                        +{roomDay.bookings.length - 2} รายการ
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </article>
+                        <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-center text-[11px] font-black text-slate-500 ring-1 ring-slate-200">
+                          {"\u0e14\u0e39\u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14"}
+                        </p>
+                      </button>
                     );
                   })}
                 </div>
               </div>
             </section>
+
+            {selectedCalendarDay && (
+              <div
+                className="fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+                role="dialog"
+                aria-modal="true"
+                onClick={() => setSelectedCalendarDay(null)}
+              >
+                <div
+                  className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl ring-1 ring-slate-200"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+                        Booking Details
+                      </p>
+                      <h3 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
+                        {formatDateOnly(selectedCalendarDay.date)} ·{" "}
+                        {formatWeekday(selectedCalendarDay.date)}
+                      </h3>
+                      <p className="mt-2 text-sm font-bold text-slate-500">
+                        รายละเอียดห้องว่าง ห้องที่จอง และห้องที่ล็อกไว้ในวันนี้
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCalendarDay(null)}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                    >
+                      <XCircle size={18} className="text-white" />
+                      <span className="text-white">ปิด</span>
+                    </button>
+                  </div>
+
+                  <div className="max-h-[calc(88vh-120px)] overflow-y-auto p-5 sm:p-6">
+                    <div className="mb-5 grid gap-3 sm:grid-cols-4">
+                      <SmallScheduleMetric
+                        label="ว่างรวม"
+                        value={selectedCalendarDay.totalAvailable}
+                      />
+                      <SmallScheduleMetric
+                        label="ลูกค้าจอง"
+                        value={selectedCalendarDay.totalCustomerBooked}
+                      />
+                      <SmallScheduleMetric
+                        label="ล็อกไว้"
+                        value={selectedCalendarDay.totalReserved}
+                      />
+                      <SmallScheduleMetric
+                        label="รวมใช้ไป"
+                        value={selectedCalendarDay.totalBooked}
+                      />
+                    </div>
+
+                    <div className="grid gap-4">
+                      {selectedCalendarDay.rooms.map((roomDay) => {
+                        const roomIsFull = roomDay.availableCount <= 0;
+                        const roomHasBooking = roomDay.bookedCount > 0;
+
+                        return (
+                          <section
+                            key={roomDay.room.id}
+                            className={[
+                              "rounded-[1.75rem] p-4 ring-1 sm:p-5",
+                              roomIsFull
+                                ? "bg-red-50 ring-red-100"
+                                : roomHasBooking
+                                  ? "bg-amber-50 ring-amber-100"
+                                  : "bg-emerald-50 ring-emerald-100",
+                            ].join(" ")}
+                          >
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                              <div>
+                                <h4 className="text-xl font-black text-slate-950">
+                                  {roomDay.room.name}
+                                </h4>
+                                <p className="mt-1 text-sm font-bold text-slate-500">
+                                  ทั้งหมด {roomDay.totalRooms} ห้อง · ว่าง{" "}
+                                  {roomDay.availableCount} ห้อง · ลูกค้าจอง{" "}
+                                  {roomDay.realBookedCount} ห้อง · ล็อก{" "}
+                                  {roomDay.reservedRooms} ห้อง
+                                </p>
+                              </div>
+
+                              <span
+                                className={[
+                                  "inline-flex w-fit rounded-2xl px-4 py-2 text-sm font-black ring-1",
+                                  roomIsFull
+                                    ? "bg-red-100 text-red-700 ring-red-200"
+                                    : roomHasBooking
+                                      ? "bg-amber-100 text-amber-700 ring-amber-200"
+                                      : "bg-emerald-100 text-emerald-700 ring-emerald-200",
+                                ].join(" ")}
+                              >
+                                {roomIsFull ? "ห้องเต็ม" : `เหลือ ${roomDay.availableCount} ห้อง`}
+                              </span>
+                            </div>
+
+                            {roomDay.bookings.length === 0 ? (
+                              <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-sm font-black text-slate-500 ring-1 ring-white">
+                                ไม่มีลูกค้าจองห้องประเภทนี้ในวันนี้
+                              </div>
+                            ) : (
+                              <div className="mt-4 grid gap-3">
+                                {roomDay.bookings.map((booking) => {
+                                  const statusInfo = getStatusInfo(booking.status);
+                                  const paymentInfo = getPaymentStatusInfo(
+                                    booking.paymentStatus
+                                  );
+                                  const StatusIcon = statusInfo.icon;
+                                  const PaymentIcon = paymentInfo.icon;
+
+                                  return (
+                                    <Link
+                                      key={booking.id}
+                                      href={`/admin/bookings/${booking.id}`}
+                                      className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
+                                    >
+                                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="min-w-0">
+                                          <p className="truncate text-lg font-black text-slate-950">
+                                            {booking.displayName || "ลูกค้า"}
+                                          </p>
+                                          <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                                            {booking.bookingCode || `#${booking.id}`} ·{" "}
+                                            {Math.max(
+                                              Number(booking.roomCount || 1),
+                                              1
+                                            )}{" "}
+                                            ห้อง · โทร {booking.phone || "-"}
+                                          </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2 lg:justify-end">
+                                          <span
+                                            className={[
+                                              "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
+                                              statusInfo.className,
+                                            ].join(" ")}
+                                          >
+                                            <StatusIcon
+                                              size={15}
+                                              className={statusInfo.iconClass}
+                                            />
+                                            {statusInfo.label}
+                                          </span>
+
+                                          {booking.paymentStatus !== "REJECTED" && (
+                                            <span
+                                              className={[
+                                                "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
+                                                paymentInfo.className,
+                                              ].join(" ")}
+                                            >
+                                              <PaymentIcon
+                                                size={15}
+                                                className={paymentInfo.iconClass}
+                                              />
+                                              {paymentInfo.label}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <section className="mt-5">
               <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
