@@ -532,12 +532,6 @@ export default function AdminBookingsPage() {
             value={cancelledCount}
           />
           <AdminStatCard
-            icon={ReceiptText}
-            iconClass="bg-blue-50 text-blue-600 ring-blue-100"
-            label="รอตรวจสลิป"
-            value={paymentPendingCount}
-          />
-          <AdminStatCard
             icon={Banknote}
             iconClass="bg-emerald-50 text-emerald-600 ring-emerald-100"
             label="ชำระแล้ว"
