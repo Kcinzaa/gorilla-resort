@@ -1278,7 +1278,7 @@ export default function AdminDashboardPage() {
                     </h2>
 
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      รายการล่าสุดที่ลูกค้าส่งเข้ามาในระบบ
+                      รายการล่าสุดที่ลูกค้าส่งเข้ามาในระบบจอง
                     </p>
                   </div>
 
