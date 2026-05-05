@@ -516,7 +516,7 @@ export default function AdminBookingsPage() {
           <AdminStatCard
             icon={Clock3}
             iconClass="bg-amber-50 text-amber-600 ring-amber-100"
-            label="รอตรวจสอบ"
+            label="รอตรวจสอบการจอง"
             value={pendingCount}
           />
           <AdminStatCard
