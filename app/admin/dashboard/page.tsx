@@ -839,7 +839,7 @@ export default function AdminDashboardPage() {
                   รายการจองทั้งหมด
                 </p>
                 <p className="mt-2 text-4xl font-black text-slate-950">
-                  {bookings.length}
+                  {confirmedBookings.length}
                 </p>
               </div>
 
@@ -1620,10 +1620,16 @@ function SmallScheduleMetric({
   label: string;
   value: number;
 }) {
+  const isBookingCount = label === "จอง";
+  const valueClass =
+    isBookingCount && value > 0 ? "text-red-600" : "text-slate-950";
+
   return (
     <div className="rounded-xl bg-slate-100 px-2 py-2">
       <p className="text-[10px] font-bold text-slate-500">{label}</p>
-      <p className="text-base font-black text-slate-950">{value}</p>
+      <p className={["text-base font-black", valueClass].join(" ")}>
+        {value}
+      </p>
     </div>
   );
 }
