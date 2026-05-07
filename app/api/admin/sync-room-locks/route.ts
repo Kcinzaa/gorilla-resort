@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 type SyncLockBody = {
   gorillaRoomTypeId: number;
@@ -18,12 +18,15 @@ function mapGorillaRoomToRhinoSlug(gorillaRoomTypeId: number) {
 
 export async function POST(request: Request) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+
     const body = (await request.json()) as SyncLockBody;
 
     const gorillaRoomTypeId = Number(body.gorillaRoomTypeId);
     const lockedRooms = Number(body.lockedRooms || 0);
     const totalRooms = Number(body.totalRooms || 0);
     const reason = body.reason || "ล็อกจากแอดมิน Gorilla";
+
 
     if (!gorillaRoomTypeId) {
       return NextResponse.json(
