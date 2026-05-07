@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/auth";
+import {
+  mapGorillaRoomToRhinoSlug,
+  syncGorillaRoomLocks,
+} from "@/lib/roomLockSync";
 
 function cleanString(value: unknown) {
   return String(value || "").trim();
@@ -16,6 +20,24 @@ function getErrorMessage(error: unknown) {
 
 function isReservedRoomsColumnError(error: unknown) {
   return getErrorMessage(error).includes("reservedRooms");
+}
+
+async function syncRoomLocksAfterSave({
+  roomId,
+  reservedRooms,
+  totalRooms,
+}: {
+  roomId: number;
+  reservedRooms: number;
+  totalRooms: number;
+}) {
+  if (!mapGorillaRoomToRhinoSlug(roomId)) return null;
+
+  return syncGorillaRoomLocks({
+    gorillaRoomTypeId: roomId,
+    lockedRooms: reservedRooms,
+    totalRooms,
+  });
 }
 
 export async function GET(request: Request) {
@@ -160,11 +182,17 @@ export async function POST(request: Request) {
         isActive,
       },
     });
+    const syncResult = await syncRoomLocksAfterSave({
+      roomId: room.id,
+      reservedRooms,
+      totalRooms,
+    });
 
     return NextResponse.json({
       success: true,
       message: "เพิ่มห้องพักสำเร็จ",
       data: room,
+      syncRoomLocks: syncResult,
     });
   } catch (error) {
     console.error("POST ADMIN ROOMS ERROR:", error);
@@ -278,11 +306,17 @@ export async function PATCH(request: Request) {
         isActive,
       },
     });
+    const syncResult = await syncRoomLocksAfterSave({
+      roomId: room.id,
+      reservedRooms,
+      totalRooms,
+    });
 
     return NextResponse.json({
       success: true,
       message: "อัปเดตห้องพักสำเร็จ",
       data: room,
+      syncRoomLocks: syncResult,
     });
   } catch (error) {
     console.error("PATCH ADMIN ROOMS ERROR:", error);
