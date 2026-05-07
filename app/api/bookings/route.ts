@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
 import { prisma } from "@/lib/prisma";
 
 function cleanString(value: unknown) {
@@ -374,10 +375,23 @@ export async function POST(request: Request) {
       },
     });
 
+    let centralSync = null;
+    try {
+      centralSync = await syncGorillaBookingToCentral(booking);
+    } catch (syncError) {
+      console.error("SYNC_GORILLA_BOOKING_TO_CENTRAL_ERROR:", syncError);
+      centralSync = {
+        synced: false,
+        skipped: false,
+        message: syncError instanceof Error ? syncError.message : "Unknown sync error",
+      };
+    }
+
     return NextResponse.json({
       success: true,
       message: "ส่งคำขอจองและแจ้งชำระเงินสำเร็จ",
       data: booking,
+      centralSync,
     });
   } catch (error) {
     console.error("POST BOOKINGS ERROR:", error);

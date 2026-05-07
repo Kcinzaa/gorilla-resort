@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/auth";
 
@@ -163,6 +164,18 @@ export async function PATCH(
         roomType: true,
       },
     });
+
+    let centralSync = null;
+    try {
+      centralSync = await syncGorillaBookingToCentral(booking);
+    } catch (syncError) {
+      console.error("SYNC_ADMIN_BOOKING_DETAIL_TO_CENTRAL_ERROR:", syncError);
+      centralSync = {
+        synced: false,
+        skipped: false,
+        message: syncError instanceof Error ? syncError.message : "Unknown sync error",
+      };
+    }
 
     return NextResponse.json({
       success: true,

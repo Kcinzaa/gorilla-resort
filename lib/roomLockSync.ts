@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
 
 type SyncRoomLocksParams = {
   gorillaRoomTypeId: number;
@@ -39,7 +39,15 @@ export async function syncGorillaRoomLocks({
     throw new Error("Locked room count is greater than total room count");
   }
 
-  const supabaseAdmin = getSupabaseAdmin();
+  const supabaseAdmin = getCentralSupabaseAdmin();
+
+  if (!supabaseAdmin) {
+    return {
+      synced: false,
+      skipped: true,
+      message: "Missing CENTRAL_SUPABASE_URL or CENTRAL_SUPABASE_SERVICE_ROLE_KEY",
+    };
+  }
 
   const { data: roomType, error: roomTypeError } = await supabaseAdmin
     .from("room_types")
