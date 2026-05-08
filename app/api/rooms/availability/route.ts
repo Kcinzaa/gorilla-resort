@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { prisma } from "@/lib/prisma";
 
 type AvailabilityRoom = {
@@ -184,23 +185,30 @@ export async function GET(request: Request) {
       return acc;
     }, {});
 
-    const data = rooms.map((room: AvailabilityRoom) => {
+    const data = await Promise.all(rooms.map(async (room: AvailabilityRoom) => {
       const totalRooms = Number(room.totalRooms || 0);
       const reservedRooms = Math.min(Number(room.reservedRooms || 0), totalRooms);
       const realBookedRooms = bookedCountByRoomType[room.id] || 0;
-      const bookedRooms = reservedRooms + realBookedRooms;
+      const centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+        gorillaRoomTypeId: room.id,
+        checkIn,
+        checkOut,
+      });
+      const bookedRooms = reservedRooms + realBookedRooms + centralRhinoBookedRooms;
       const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 
       return {
         ...room,
         totalRooms,
         reservedRooms,
-        realBookedRooms,
+        realBookedRooms: realBookedRooms + centralRhinoBookedRooms,
+        localBookedRooms: realBookedRooms,
+        centralRhinoBookedRooms,
         bookedRooms,
         availableRooms,
         isAvailable: availableRooms > 0,
       };
-    });
+    }));
 
     return NextResponse.json({
       success: true,

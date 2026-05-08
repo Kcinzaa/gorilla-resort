@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { prisma } from "@/lib/prisma";
 
 type RoomTypeItem = {
@@ -151,10 +152,16 @@ export async function GET(request: Request) {
           checkIn,
           checkOut,
         });
+        const centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+          gorillaRoomTypeId: roomType.id,
+          checkIn,
+          checkOut,
+        });
 
         const totalRooms = Number(roomType.totalRooms ?? 1);
         const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);
-        const bookedRooms = reservedRooms + overlappingBookings;
+        const bookedRooms =
+          reservedRooms + overlappingBookings + centralRhinoBookedRooms;
         const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 
         return {
@@ -166,7 +173,9 @@ export async function GET(request: Request) {
           totalRooms,
           reservedRooms,
           imageUrl: roomType.imageUrl,
-          realBookedRooms: overlappingBookings,
+          realBookedRooms: overlappingBookings + centralRhinoBookedRooms,
+          localBookedRooms: overlappingBookings,
+          centralRhinoBookedRooms,
           bookedRooms,
           availableRooms,
           isAvailable: availableRooms > 0,
