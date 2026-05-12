@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
 
 type CentralBookingCartItem = {
   roomTypeId?: string;
@@ -34,23 +34,6 @@ type GetCentralRhinoBookedRoomCountParams = {
   checkIn: Date;
   checkOut: Date;
 };
-
-const supabaseUrl =
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "";
-
-const supabaseServiceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_SERVICE_KEY ||
-  "";
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
 
 function toDateInputValue(date: Date) {
   const year = date.getFullYear();
@@ -130,6 +113,13 @@ function getItemSlug(
 }
 
 async function getRoomSlugByIdMap() {
+  const supabaseAdmin = getCentralSupabaseAdmin();
+
+  if (!supabaseAdmin) {
+    console.error("CENTRAL_SUPABASE_ENV_MISSING_FOR_ROOM_TYPES");
+    return new Map<string, string>();
+  }
+
   const { data, error } = await supabaseAdmin
     .from("room_types")
     .select("id, name, slug");
@@ -153,10 +143,12 @@ export async function getCentralRhinoBookedRoomCount({
   checkOut,
 }: GetCentralRhinoBookedRoomCountParams) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabaseAdmin = getCentralSupabaseAdmin();
+
+    if (!supabaseAdmin) {
       console.error("CENTRAL_SUPABASE_ENV_MISSING", {
-        hasUrl: Boolean(supabaseUrl),
-        hasServiceKey: Boolean(supabaseServiceKey),
+        hint:
+          "Set CENTRAL_SUPABASE_URL and CENTRAL_SUPABASE_SERVICE_ROLE_KEY in .env so gorilla can read rhino's bookings.",
       });
 
       return 0;
