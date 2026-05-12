@@ -272,7 +272,10 @@ export default function AdminDashboardPage() {
   }, [rooms]);
 
   const totalRoomCount = useMemo(() => {
-    return activeRooms.reduce((sum, room) => sum + Number(room.totalRooms ?? 1), 0);
+    return activeRooms.reduce(
+      (sum, room) => sum + Number(room.totalRooms ?? 1),
+      0,
+    );
   }, [activeRooms]);
 
   const estimatedRevenue = useMemo(() => {
@@ -351,9 +354,7 @@ export default function AdminDashboardPage() {
 
         const apiRoom = dayAvailability[room.id];
 
-        const totalRooms = Number(
-          apiRoom?.totalRooms ?? room.totalRooms ?? 1,
-        );
+        const totalRooms = Number(apiRoom?.totalRooms ?? room.totalRooms ?? 1);
 
         const reservedRooms = Math.min(
           Math.max(Number(apiRoom?.reservedRooms ?? room.reservedRooms ?? 0), 0),
@@ -584,8 +585,13 @@ export default function AdminDashboardPage() {
           const checkOut = formatInputDate(addDays(date, 1));
 
           try {
+            /**
+             * สำคัญ:
+             * โปรเจกต์ Gorilla ของคุณใช้ app/api/rooms/route.ts
+             * endpoint คือ /api/rooms ไม่ใช่ /api/rooms/availability
+             */
             const response = await fetch(
-              `/api/rooms/availability?checkIn=${encodeURIComponent(
+              `/api/rooms?checkIn=${encodeURIComponent(
                 checkIn,
               )}&checkOut=${encodeURIComponent(checkOut)}`,
               {
@@ -708,9 +714,14 @@ export default function AdminDashboardPage() {
         return;
       }
 
+      /**
+       * สำคัญ:
+       * ถ้า /api/admin/rooms โหลดไม่ได้หรือ format ไม่ตรง
+       * ให้ fallback ไป /api/rooms เพื่อไม่ให้ห้องจริงทั้งหมดเป็น 0
+       */
       const [bookingResult, roomResult] = await Promise.all([
         fetchJsonWithFallback(["/api/admin/bookings"]),
-        fetchJsonWithFallback(["/api/admin/rooms"]),
+        fetchJsonWithFallback(["/api/admin/rooms", "/api/rooms"]),
       ]);
 
       applyBookingsUpdate(
@@ -958,7 +969,7 @@ export default function AdminDashboardPage() {
               <MiniSummaryCard
                 title="จองจาก Rhino วันนี้"
                 value={todaySummary.totalCentralRhinoBooked}
-                detail="ดึงจาก /api/rooms/availability"
+                detail="ดึงจาก /api/rooms"
                 orange
               />
 
@@ -1279,7 +1290,9 @@ function DashboardStatCard({
 
       <p className="mt-2 text-4xl font-black text-slate-950">{value}</p>
 
-      {detail && <p className="mt-2 text-sm font-bold text-slate-500">{detail}</p>}
+      {detail && (
+        <p className="mt-2 text-sm font-bold text-slate-500">{detail}</p>
+      )}
     </div>
   );
 }
@@ -1480,8 +1493,9 @@ function CalendarDayModal({
 
                   {roomDay.centralRhinoBookedCount > 0 && (
                     <div className="mt-4 rounded-2xl bg-orange-100 p-4 text-sm font-black text-orange-700 ring-1 ring-orange-200">
-                      มีรายการจองจาก Rhino จำนวน {roomDay.centralRhinoBookedCount}{" "}
-                      ห้อง ระบบนำมาหักจำนวนห้องว่างของ Gorilla แล้ว
+                      มีรายการจองจาก Rhino จำนวน{" "}
+                      {roomDay.centralRhinoBookedCount} ห้อง
+                      ระบบนำมาหักจำนวนห้องว่างของ Gorilla แล้ว
                     </div>
                   )}
 
