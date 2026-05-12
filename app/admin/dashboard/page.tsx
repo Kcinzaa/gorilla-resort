@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,7 +20,6 @@ import {
   ReceiptText,
   RefreshCcw,
   ShieldCheck,
-  Sparkles,
   Users,
   Wallet,
   XCircle,
@@ -73,11 +72,26 @@ type RoomItem = {
   isActive?: boolean;
 };
 
+type AvailabilityApiRoom = {
+  id: number;
+  name: string;
+  totalRooms?: number | null;
+  reservedRooms?: number | null;
+  realBookedRooms?: number | null;
+  localBookedRooms?: number | null;
+  centralRhinoBookedRooms?: number | null;
+  bookedRooms?: number | null;
+  availableRooms?: number | null;
+  isAvailable?: boolean;
+};
+
 type CalendarRoomSummary = {
   room: RoomItem;
   bookings: BookingItem[];
   totalRooms: number;
   reservedRooms: number;
+  localBookedCount: number;
+  centralRhinoBookedCount: number;
   realBookedCount: number;
   bookedCount: number;
   availableCount: number;
@@ -90,6 +104,8 @@ type CalendarDaySummary = {
   totalAvailable: number;
   totalBooked: number;
   totalCustomerBooked: number;
+  totalLocalCustomerBooked: number;
+  totalCentralRhinoBooked: number;
   totalReserved: number;
   isFull: boolean;
   hasBooking: boolean;
@@ -100,6 +116,8 @@ type FetchResult = {
   data: unknown[];
   message?: string;
 };
+
+type AvailabilityByDate = Record<string, Record<number, AvailabilityApiRoom>>;
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("th-TH", {
@@ -201,18 +219,25 @@ export default function AdminDashboardPage() {
 
   const [bookings, setBookings] = useState<BookingItem[]>([]);
   const [rooms, setRooms] = useState<RoomItem[]>([]);
+  const [availabilityByDate, setAvailabilityByDate] =
+    useState<AvailabilityByDate>({});
 
   const [loading, setLoading] = useState(true);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [error, setError] = useState("");
+
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
+
   const [newBookingNotice, setNewBookingNotice] = useState<BookingItem | null>(
-    null
+    null,
   );
+
   const [selectedCalendarDay, setSelectedCalendarDay] =
     useState<CalendarDaySummary | null>(null);
+
   const knownBookingIdsRef = useRef<Set<number>>(new Set());
   const hasLoadedBookingsRef = useRef(false);
 
@@ -232,13 +257,9 @@ export default function AdminDashboardPage() {
     return bookings.filter((booking) => booking.paymentStatus === "PENDING");
   }, [bookings]);
 
-  const rejectedPaymentBookings = useMemo(() => {
-    return bookings.filter((booking) => booking.paymentStatus === "REJECTED");
-  }, [bookings]);
-
   const unpaidBookings = useMemo(() => {
     return bookings.filter(
-      (booking) => !booking.paymentStatus || booking.paymentStatus === "UNPAID"
+      (booking) => !booking.paymentStatus || booking.paymentStatus === "UNPAID",
     );
   }, [bookings]);
 
@@ -251,18 +272,18 @@ export default function AdminDashboardPage() {
   }, [rooms]);
 
   const totalRoomCount = useMemo(() => {
-    return activeRooms.reduce((sum, room) => sum + (room.totalRooms ?? 1), 0);
+    return activeRooms.reduce((sum, room) => sum + Number(room.totalRooms ?? 1), 0);
   }, [activeRooms]);
 
   const estimatedRevenue = useMemo(() => {
     return confirmedBookings.reduce((sum, booking) => {
-      return sum + (booking.totalPrice || 0);
+      return sum + Number(booking.totalPrice || 0);
     }, 0);
   }, [confirmedBookings]);
 
   const pendingDepositTotal = useMemo(() => {
     return paymentPendingBookings.reduce((sum, booking) => {
-      return sum + (booking.depositAmount || 0);
+      return sum + Number(booking.depositAmount || 0);
     }, 0);
   }, [paymentPendingBookings]);
 
@@ -277,37 +298,20 @@ export default function AdminDashboardPage() {
       .slice(0, 5);
   }, [bookings]);
 
-  const latestPaymentBookings = useMemo(() => {
-    return [...bookings]
-      .filter(
-        (booking) =>
-          booking.paymentStatus === "PENDING" ||
-          booking.paymentStatus === "PAID" ||
-          booking.paymentStatus === "REJECTED"
-      )
-      .sort((a, b) => {
-        const aTime = new Date(a.updatedAt || a.createdAt || "").getTime();
-        const bTime = new Date(b.updatedAt || b.createdAt || "").getTime();
-
-        return bTime - aTime;
-      })
-      .slice(0, 5);
-  }, [bookings]);
-
   const scheduleDates = useMemo(() => {
     const start = new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth(),
-      1
+      1,
     );
     const end = new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth() + 1,
-      0
+      0,
     );
 
     return Array.from({ length: end.getDate() }, (_, index) =>
-      addDays(start, index)
+      addDays(start, index),
     );
   }, [calendarMonth]);
 
@@ -315,7 +319,7 @@ export default function AdminDashboardPage() {
     return new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth(),
-      1
+      1,
     ).getDay();
   }, [calendarMonth]);
 
@@ -329,68 +333,62 @@ export default function AdminDashboardPage() {
     });
   }, [bookings]);
 
-  const occupancyRows = useMemo(() => {
-    return activeRooms.map((room) => {
-      const roomBookings = activeScheduleBookings.filter(
-        (booking) => booking.roomType?.id === room.id
-      );
-
-      const days = scheduleDates.map((date) => {
-        const dayBookings = roomBookings.filter((booking) =>
-          isDateInBooking(date, booking)
-        );
-        const realBookedCount = dayBookings.reduce(
-          (sum, booking) => sum + Math.max(Number(booking.roomCount || 1), 1),
-          0
-        );
-        const totalRooms = room.totalRooms ?? 1;
-        const reservedRooms = Math.min(
-          Math.max(Number(room.reservedRooms || 0), 0),
-          totalRooms
-        );
-        const heldCount = reservedRooms + realBookedCount;
-
-        return {
-          date,
-          bookedCount: heldCount,
-          realBookedCount,
-          reservedRooms,
-          availableCount: Math.max(totalRooms - heldCount, 0),
-          bookings: dayBookings,
-        };
-      });
-
-      return {
-        room,
-        days,
-      };
-    });
-  }, [activeRooms, activeScheduleBookings, scheduleDates]);
-
   const monthlyCalendarDays = useMemo<CalendarDaySummary[]>(() => {
     return scheduleDates.map((date) => {
+      const dateKey = formatInputDate(date);
+      const dayAvailability = availabilityByDate[dateKey] || {};
+
       const rooms = activeRooms.map((room) => {
         const roomBookings = activeScheduleBookings.filter(
           (booking) =>
-            booking.roomType?.id === room.id && isDateInBooking(date, booking)
+            booking.roomType?.id === room.id && isDateInBooking(date, booking),
         );
-        const realBookedCount = roomBookings.reduce(
+
+        const localBookedFromBookings = roomBookings.reduce(
           (sum, booking) => sum + Math.max(Number(booking.roomCount || 1), 1),
-          0
+          0,
         );
-        const totalRooms = Number(room.totalRooms ?? 1);
+
+        const apiRoom = dayAvailability[room.id];
+
+        const totalRooms = Number(
+          apiRoom?.totalRooms ?? room.totalRooms ?? 1,
+        );
+
         const reservedRooms = Math.min(
-          Math.max(Number(room.reservedRooms || 0), 0),
-          totalRooms
+          Math.max(Number(apiRoom?.reservedRooms ?? room.reservedRooms ?? 0), 0),
+          totalRooms,
         );
-        const bookedCount = reservedRooms + realBookedCount;
-        const availableCount = Math.max(totalRooms - bookedCount, 0);
+
+        const localBookedCount = Number(
+          apiRoom?.localBookedRooms ?? localBookedFromBookings,
+        );
+
+        const centralRhinoBookedCount = Number(
+          apiRoom?.centralRhinoBookedRooms ?? 0,
+        );
+
+        const realBookedCount = Number(
+          apiRoom?.realBookedRooms ??
+            localBookedCount + centralRhinoBookedCount,
+        );
+
+        const bookedCount = Number(
+          apiRoom?.bookedRooms ?? reservedRooms + realBookedCount,
+        );
+
+        const availableCount = Math.max(
+          Number(apiRoom?.availableRooms ?? totalRooms - bookedCount),
+          0,
+        );
 
         return {
           room,
           bookings: roomBookings,
           totalRooms,
           reservedRooms,
+          localBookedCount,
+          centralRhinoBookedCount,
           realBookedCount,
           bookedCount,
           availableCount,
@@ -398,18 +396,32 @@ export default function AdminDashboardPage() {
       });
 
       const totalRooms = rooms.reduce((sum, item) => sum + item.totalRooms, 0);
+
       const totalAvailable = rooms.reduce(
         (sum, item) => sum + item.availableCount,
-        0
+        0,
       );
+
       const totalBooked = rooms.reduce((sum, item) => sum + item.bookedCount, 0);
+
       const totalCustomerBooked = rooms.reduce(
         (sum, item) => sum + item.realBookedCount,
-        0
+        0,
       );
+
+      const totalLocalCustomerBooked = rooms.reduce(
+        (sum, item) => sum + item.localBookedCount,
+        0,
+      );
+
+      const totalCentralRhinoBooked = rooms.reduce(
+        (sum, item) => sum + item.centralRhinoBookedCount,
+        0,
+      );
+
       const totalReserved = rooms.reduce(
         (sum, item) => sum + item.reservedRooms,
-        0
+        0,
       );
 
       return {
@@ -419,24 +431,41 @@ export default function AdminDashboardPage() {
         totalAvailable,
         totalBooked,
         totalCustomerBooked,
+        totalLocalCustomerBooked,
+        totalCentralRhinoBooked,
         totalReserved,
         isFull: totalRooms > 0 && totalAvailable <= 0,
         hasBooking: totalBooked > 0,
       };
     });
-  }, [activeRooms, activeScheduleBookings, scheduleDates]);
+  }, [activeRooms, activeScheduleBookings, availabilityByDate, scheduleDates]);
+
+  const todaySummary = useMemo(() => {
+    const todayKey = formatInputDate(new Date());
+    const day = monthlyCalendarDays.find((item) => {
+      return formatInputDate(item.date) === todayKey;
+    });
+
+    return {
+      totalAvailable: day?.totalAvailable ?? 0,
+      totalBooked: day?.totalBooked ?? 0,
+      totalReserved: day?.totalReserved ?? 0,
+      totalCentralRhinoBooked: day?.totalCentralRhinoBooked ?? 0,
+      totalLocalCustomerBooked: day?.totalLocalCustomerBooked ?? 0,
+    };
+  }, [monthlyCalendarDays]);
 
   function goToPreviousMonth() {
     setSelectedCalendarDay(null);
     setCalendarMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1)
+      (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1),
     );
   }
 
   function goToNextMonth() {
     setSelectedCalendarDay(null);
     setCalendarMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1)
+      (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1),
     );
   }
 
@@ -482,15 +511,18 @@ export default function AdminDashboardPage() {
     const csv = [headers, ...rows]
       .map((row) => row.map(csvEscape).join(","))
       .join("\n");
+
     const blob = new Blob([`\uFEFF${csv}`], {
       type: "text/csv;charset=utf-8;",
     });
+
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
 
     anchor.href = url;
     anchor.download = `resort-bookings-${formatInputDate(new Date())}.csv`;
     anchor.click();
+
     URL.revokeObjectURL(url);
   }
 
@@ -530,10 +562,83 @@ export default function AdminDashboardPage() {
     };
   }
 
+  async function loadMonthAvailability(
+    month: Date,
+    options?: { silent?: boolean },
+  ) {
+    try {
+      if (!options?.silent) {
+        setAvailabilityLoading(true);
+      }
+
+      const start = new Date(month.getFullYear(), month.getMonth(), 1);
+      const end = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+
+      const dates = Array.from({ length: end.getDate() }, (_, index) =>
+        addDays(start, index),
+      );
+
+      const entries = await Promise.all(
+        dates.map(async (date) => {
+          const checkIn = formatInputDate(date);
+          const checkOut = formatInputDate(addDays(date, 1));
+
+          try {
+            const response = await fetch(
+              `/api/rooms/availability?checkIn=${encodeURIComponent(
+                checkIn,
+              )}&checkOut=${encodeURIComponent(checkOut)}`,
+              {
+                cache: "no-store",
+                credentials: "include",
+              },
+            );
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || result.success === false) {
+              console.warn("LOAD_DAY_AVAILABILITY_FAILED", {
+                checkIn,
+                checkOut,
+                result,
+              });
+
+              return [checkIn, {}] as const;
+            }
+
+            const apiRooms = toArray<AvailabilityApiRoom>(result);
+            const mapByRoomId: Record<number, AvailabilityApiRoom> = {};
+
+            apiRooms.forEach((room) => {
+              mapByRoomId[Number(room.id)] = room;
+            });
+
+            return [checkIn, mapByRoomId] as const;
+          } catch (error) {
+            console.warn("LOAD_DAY_AVAILABILITY_ERROR", {
+              checkIn,
+              checkOut,
+              error,
+            });
+
+            return [checkIn, {}] as const;
+          }
+        }),
+      );
+
+      setAvailabilityByDate(Object.fromEntries(entries));
+    } finally {
+      if (!options?.silent) {
+        setAvailabilityLoading(false);
+      }
+    }
+  }
+
   function playNewBookingSound() {
     try {
       const AudioContextClass =
         window.AudioContext || (window as any).webkitAudioContext;
+
       const audioContext = new AudioContextClass();
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -542,8 +647,14 @@ export default function AdminDashboardPage() {
       oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
       oscillator.frequency.setValueAtTime(660, audioContext.currentTime + 0.12);
       gain.gain.setValueAtTime(0.001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.32);
+      gain.gain.exponentialRampToValueAtTime(
+        0.16,
+        audioContext.currentTime + 0.02,
+      );
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioContext.currentTime + 0.32,
+      );
       oscillator.connect(gain);
       gain.connect(audioContext.destination);
       oscillator.start();
@@ -555,11 +666,15 @@ export default function AdminDashboardPage() {
 
   function applyBookingsUpdate(nextBookings: BookingItem[], notify: boolean) {
     const previousIds = knownBookingIdsRef.current;
+
     const newBookings = nextBookings.filter(
-      (booking) => !previousIds.has(booking.id)
+      (booking) => !previousIds.has(booking.id),
     );
 
-    knownBookingIdsRef.current = new Set(nextBookings.map((booking) => booking.id));
+    knownBookingIdsRef.current = new Set(
+      nextBookings.map((booking) => booking.id),
+    );
+
     setBookings(nextBookings);
 
     if (notify && hasLoadedBookingsRef.current && newBookings.length > 0) {
@@ -585,6 +700,7 @@ export default function AdminDashboardPage() {
         cache: "no-store",
         credentials: "include",
       });
+
       const authResult = await authResponse.json();
 
       if (!authResponse.ok || !authResult.loggedIn) {
@@ -599,11 +715,13 @@ export default function AdminDashboardPage() {
 
       applyBookingsUpdate(
         toArray<BookingItem>(bookingResult),
-        Boolean(options?.notify)
+        Boolean(options?.notify),
       );
+
       setRooms(toArray<RoomItem>(roomResult));
     } catch (err) {
       console.warn("Dashboard load failed:", err);
+
       if (!options?.silent) {
         setError("เกิดข้อผิดพลาดในการโหลดข้อมูล Dashboard");
       }
@@ -624,14 +742,20 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadDashboard();
+    loadMonthAvailability(calendarMonth);
 
     const intervalId = window.setInterval(() => {
       loadDashboard({ silent: true, notify: true });
+      loadMonthAvailability(calendarMonth, { silent: true });
     }, 15000);
 
     return () => window.clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    loadMonthAvailability(calendarMonth);
+  }, [calendarMonth]);
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
@@ -648,7 +772,7 @@ export default function AdminDashboardPage() {
                   Admin Dashboard
                 </h1>
                 <p className="text-sm text-slate-500">
-                  Resort Booking Management
+                  Gorilla Resort Booking Management
                 </p>
               </div>
             </div>
@@ -690,59 +814,6 @@ export default function AdminDashboardPage() {
           </div>
         </header>
 
-        <section className="hidden">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-500 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-500 blur-3xl" />
-            <div className="absolute right-1/3 top-1/3 h-72 w-72 rounded-full bg-amber-400 blur-3xl" />
-          </div>
-
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-end">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 ring-1 ring-white/10">
-                <Sparkles size={16} className="text-slate-200" />
-                <span className="text-slate-200">Payment Overview</span>
-              </div>
-
-              <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                ภาพรวมระบบจองและชำระมัดจำ
-              </h2>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
-                ตรวจสอบรายการจอง รอตรวจสลิป และสถานะห้องพักทั้งหมดในหน้าเดียว
-              </p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href="/admin/bookings"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
-                  <span className="text-white">ตรวจรายการจอง/สลิป</span>
-                  <CalendarCheck size={18} className="text-white" />
-                </Link>
-
-                <Link
-                  href="/admin/rooms"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
-                >
-                  <span className="text-slate-950">จัดการห้องพัก</span>
-                  <BedDouble size={18} className="text-slate-950" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="grid gap-3">
-              <div className="rounded-[2rem] bg-white/10 p-5 ring-1 ring-white/10">
-                <ReceiptText size={28} className="text-amber-300" />
-                <p className="mt-4 text-4xl font-black text-white">
-                  {paymentPendingBookings.length}
-                </p>
-                <p className="mt-1 text-sm text-slate-300">รายการรอตรวจสลิป</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {loading && (
           <section className="mt-5 flex min-h-[420px] flex-col items-center justify-center rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem]">
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
@@ -754,7 +825,7 @@ export default function AdminDashboardPage() {
             </h2>
 
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-              กรุณารอสักครู่ ระบบกำลังดึงข้อมูลรายการจอง ห้องพัก และการชำระเงิน
+              ระบบกำลังดึงรายการจอง ห้องพัก และจำนวนห้องว่างจาก Gorilla + Rhino
             </p>
           </section>
         )}
@@ -779,7 +850,10 @@ export default function AdminDashboardPage() {
 
               <button
                 type="button"
-                onClick={() => loadDashboard()}
+                onClick={() => {
+                  loadDashboard();
+                  loadMonthAvailability(calendarMonth);
+                }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
               >
                 <RefreshCcw size={18} className="text-white" />
@@ -796,6 +870,7 @@ export default function AdminDashboardPage() {
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
                   <CalendarCheck size={28} />
                 </div>
+
                 <div>
                   <h2 className="text-xl font-black text-emerald-800">
                     มีรายการจองใหม่เข้ามา
@@ -815,6 +890,7 @@ export default function AdminDashboardPage() {
                 >
                   เปิดดูรายการ
                 </Link>
+
                 <button
                   type="button"
                   onClick={() => setNewBookingNotice(null)}
@@ -830,101 +906,111 @@ export default function AdminDashboardPage() {
         {!loading && !error && (
           <>
             <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                  <CalendarCheck size={28} className="text-white" />
-                </div>
+              <DashboardStatCard
+                title="รายการจองทั้งหมด"
+                value={bookings.length}
+                icon={<CalendarCheck size={28} className="text-white" />}
+                tone="black"
+              />
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  รายการจองทั้งหมด
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {confirmedBookings.length}
-                </p>
-              </div>
+              <DashboardStatCard
+                title="ยืนยันการจองแล้ว"
+                value={confirmedBookings.length}
+                icon={<CheckCircle2 size={28} className="text-emerald-600" />}
+                tone="green"
+              />
 
-              {pendingBookings.length > 0 && (
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
-                  <Clock3 size={28} className="text-amber-600" />
-                </div>
+              <DashboardStatCard
+                title="จองจาก Rhino วันนี้"
+                value={todaySummary.totalCentralRhinoBooked}
+                icon={<Hotel size={28} className="text-orange-600" />}
+                tone="orange"
+              />
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  รอตรวจสอบการจอง
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {pendingBookings.length}
-                </p>
-                </div>
-              )}
+              <DashboardStatCard
+                title="รายได้ที่ยืนยันแล้ว"
+                value={formatCurrency(estimatedRevenue)}
+                icon={<Wallet size={28} className="text-blue-600" />}
+                tone="blue"
+              />
+            </section>
 
-              {confirmedBookings.length > 0 && (
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-                  <CheckCircle2 size={28} className="text-emerald-600" />
-                </div>
+            <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+              <MiniSummaryCard
+                title="ห้องจริงทั้งหมด"
+                value={totalRoomCount}
+                detail={`${activeRooms.length} ประเภทห้องที่เปิดใช้งาน`}
+              />
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  ยืนยันการจองแล้ว
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {confirmedBookings.length}
-                </p>
-                </div>
-              )}
+              <MiniSummaryCard
+                title="ว่างวันนี้"
+                value={todaySummary.totalAvailable}
+                detail="หลังหักล็อก + Gorilla + Rhino"
+                green
+              />
 
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
-                  <Wallet size={28} className="text-blue-600" />
-                </div>
+              <MiniSummaryCard
+                title="จองใน Gorilla วันนี้"
+                value={todaySummary.totalLocalCustomerBooked}
+                detail="นับจากรายการจองฝั่ง Gorilla"
+              />
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  รายได้ที่ยืนยันแล้ว
-                </p>
-                <p className="mt-2 text-3xl font-black text-slate-950">
-                  {formatCurrency(estimatedRevenue)}
-                </p>
-              </div>
+              <MiniSummaryCard
+                title="จองจาก Rhino วันนี้"
+                value={todaySummary.totalCentralRhinoBooked}
+                detail="ดึงจาก /api/rooms/availability"
+                orange
+              />
+
+              <MiniSummaryCard
+                title="ล็อกไว้"
+                value={todaySummary.totalReserved}
+                detail="reservedRooms"
+                red
+              />
             </section>
 
             {(paymentPendingBookings.length > 0 ||
-              unpaidBookings.length > 0) && (
+              unpaidBookings.length > 0 ||
+              pendingBookings.length > 0) && (
               <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {paymentPendingBookings.length > 0 && (
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
-                  <ReceiptText size={28} className="text-amber-600" />
-                </div>
+                {pendingBookings.length > 0 && (
+                  <DashboardStatCard
+                    title="รอตรวจสอบการจอง"
+                    value={pendingBookings.length}
+                    icon={<Clock3 size={28} className="text-amber-600" />}
+                    tone="amber"
+                  />
+                )}
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  รอตรวจสลิป
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {paymentPendingBookings.length}
-                </p>
-                <p className="mt-2 text-sm font-bold text-amber-700">
-                  {formatCurrency(pendingDepositTotal)}
-                </p>
-                </div>
-              )}
+                {paymentPendingBookings.length > 0 && (
+                  <DashboardStatCard
+                    title="รอตรวจสลิป"
+                    value={paymentPendingBookings.length}
+                    detail={formatCurrency(pendingDepositTotal)}
+                    icon={<ReceiptText size={28} className="text-amber-600" />}
+                    tone="amber"
+                  />
+                )}
 
-              {unpaidBookings.length > 0 && (
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 ring-1 ring-slate-200">
-                  <ReceiptText size={28} className="text-slate-600" />
-                </div>
+                {unpaidBookings.length > 0 && (
+                  <DashboardStatCard
+                    title="ยังไม่แจ้งชำระ"
+                    value={unpaidBookings.length}
+                    detail="UNPAID"
+                    icon={<ReceiptText size={28} className="text-slate-600" />}
+                    tone="slate"
+                  />
+                )}
 
-                <p className="mt-5 text-sm font-bold text-slate-500">
-                  ยังไม่แจ้งชำระ
-                </p>
-                <p className="mt-2 text-4xl font-black text-slate-950">
-                  {unpaidBookings.length}
-                </p>
-                <p className="mt-2 text-sm font-bold text-slate-500">
-                  UNPAID
-                </p>
-                </div>
-              )}
+                {cancelledBookings.length > 0 && (
+                  <DashboardStatCard
+                    title="ยกเลิกแล้ว"
+                    value={cancelledBookings.length}
+                    icon={<XCircle size={28} className="text-red-600" />}
+                    tone="red"
+                  />
+                )}
               </section>
             )}
 
@@ -934,13 +1020,22 @@ export default function AdminDashboardPage() {
                   <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
                     Monthly Calendar
                   </p>
+
                   <h2 className="mt-2 text-3xl font-black text-slate-950">
                     ปฏิทินการจองห้องพัก
                   </h2>
+
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                    ดูทั้งเดือนในมุมมองปฏิทิน เลื่อนดูเดือนก่อนหน้าหรือเดือนถัดไปได้
-                    แต่ละวันสรุปห้องว่าง ห้องที่จอง ห้องที่ล็อก และรายชื่อลูกค้าจริง
+                    ปฏิทินนี้รวมจำนวนห้องที่จองจาก Gorilla และจำนวนที่จองผ่าน
+                    Rhino แล้ว เพื่อให้ห้องว่างตรงกันทั้งสองเว็บ
                   </p>
+
+                  {availabilityLoading && (
+                    <p className="mt-2 inline-flex items-center gap-2 text-sm font-black text-orange-600">
+                      <Loader2 size={16} className="animate-spin" />
+                      กำลังอัปเดตจำนวนห้องว่างจาก API
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -953,6 +1048,7 @@ export default function AdminDashboardPage() {
                     >
                       <ChevronLeft size={20} />
                     </button>
+
                     <div className="min-w-44 text-center">
                       <p className="text-xs font-bold text-slate-500">
                         เดือนที่แสดง
@@ -961,6 +1057,7 @@ export default function AdminDashboardPage() {
                         {calendarMonthLabel}
                       </p>
                     </div>
+
                     <button
                       type="button"
                       onClick={goToNextMonth}
@@ -979,44 +1076,79 @@ export default function AdminDashboardPage() {
                     >
                       กลับมาเดือนนี้
                     </button>
-                  <button
-                    type="button"
-                    onClick={exportBookingsCsv}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
-                  >
-                    <Download size={18} className="text-white" />
-                    <span className="text-white">ส่งออก Excel</span>
-                  </button>
+
+                    <button
+                      type="button"
+                      onClick={() => loadMonthAvailability(calendarMonth)}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                    >
+                      <RefreshCcw size={18} className="text-white" />
+                      รีเฟรชห้องว่าง
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={exportBookingsCsv}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
+                    >
+                      <Download size={18} className="text-white" />
+                      <span className="text-white">ส่งออก Excel</span>
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div className="mb-4 grid gap-3 sm:grid-cols-4">
-                <CalendarLegendCard tone="green" label="ว่าง" detail="ยังมีห้องให้จอง" />
-                <CalendarLegendCard tone="amber" label="มีจอง" detail="มีลูกค้าหรือล็อกไว้" />
-                <CalendarLegendCard tone="red" label="เต็ม" detail="ไม่มีห้องว่าง" />
-                <CalendarLegendCard tone="slate" label="รายละเอียด" detail="กดรหัสจองเพื่อเปิดดู" />
+              <div className="mb-4 grid gap-3 sm:grid-cols-5">
+                <CalendarLegendCard
+                  tone="green"
+                  label="ว่าง"
+                  detail="ยังมีห้องให้จอง"
+                />
+                <CalendarLegendCard
+                  tone="amber"
+                  label="มีจอง"
+                  detail="มีลูกค้าหรือล็อกไว้"
+                />
+                <CalendarLegendCard
+                  tone="orange"
+                  label="Rhino"
+                  detail="จองจากเว็บ Rhino"
+                />
+                <CalendarLegendCard
+                  tone="red"
+                  label="เต็ม"
+                  detail="ไม่มีห้องว่าง"
+                />
+                <CalendarLegendCard
+                  tone="slate"
+                  label="รายละเอียด"
+                  detail="กดเพื่อเปิด popup"
+                />
               </div>
 
               <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-sm">
                 <div className="grid grid-cols-7 bg-slate-950 text-center text-xs font-black text-white">
-                  {["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."].map((dayName) => (
-                    <div
-                      key={dayName}
-                      className="border-l border-slate-800 px-2 py-3 first:border-l-0"
-                    >
-                      {dayName}
-                    </div>
-                  ))}
+                  {["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."].map(
+                    (dayName) => (
+                      <div
+                        key={dayName}
+                        className="border-l border-slate-800 px-2 py-3 first:border-l-0"
+                      >
+                        {dayName}
+                      </div>
+                    ),
+                  )}
                 </div>
 
                 <div className="grid grid-cols-7 gap-px bg-slate-200">
-                  {Array.from({ length: calendarLeadingDays }).map((_, index) => (
-                    <div
-                      key={`empty-${index}`}
-                      className="min-h-[210px] bg-slate-50"
-                    />
-                  ))}
+                  {Array.from({ length: calendarLeadingDays }).map(
+                    (_, index) => (
+                      <div
+                        key={`empty-${index}`}
+                        className="min-h-[210px] bg-slate-50"
+                      />
+                    ),
+                  )}
 
                   {monthlyCalendarDays.map((day) => {
                     const isToday = isSameCalendarDate(day.date, new Date());
@@ -1047,6 +1179,7 @@ export default function AdminDashboardPage() {
                             >
                               {day.date.getDate()}
                             </p>
+
                             <p className="mt-1 text-[11px] font-bold text-slate-500">
                               {formatWeekday(day.date)}
                             </p>
@@ -1065,20 +1198,34 @@ export default function AdminDashboardPage() {
                             >
                               {day.isFull ? "เต็ม" : "ว่างรวม"}
                             </p>
+
                             <p className="text-3xl font-black leading-none text-slate-950">
                               {day.totalAvailable}
                             </p>
                           </div>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-                          <SmallScheduleMetric label="จอง" value={day.totalCustomerBooked} />
-                          <SmallScheduleMetric label="ล็อก" value={day.totalReserved} />
-                          <SmallScheduleMetric label="รวม" value={day.totalBooked} />
+                        <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
+                          <SmallScheduleMetric
+                            label="จอง"
+                            value={day.totalLocalCustomerBooked}
+                          />
+                          <SmallScheduleMetric
+                            label="Rhino"
+                            value={day.totalCentralRhinoBooked}
+                          />
+                          <SmallScheduleMetric
+                            label="ล็อก"
+                            value={day.totalReserved}
+                          />
+                          <SmallScheduleMetric
+                            label="รวม"
+                            value={day.totalBooked}
+                          />
                         </div>
 
                         <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-center text-[11px] font-black text-slate-500 ring-1 ring-slate-200">
-                          {"\u0e14\u0e39\u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14"}
+                          ดูรายละเอียด
                         </p>
                       </button>
                     );
@@ -1088,474 +1235,452 @@ export default function AdminDashboardPage() {
             </section>
 
             {selectedCalendarDay && (
-              <div
-                className="fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
-                role="dialog"
-                aria-modal="true"
-                onClick={() => setSelectedCalendarDay(null)}
-              >
-                <div
-                  className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl ring-1 ring-slate-200"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-                    <div>
-                      <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
-                        Booking Details
-                      </p>
-                      <h3 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
-                        {formatDateOnly(selectedCalendarDay.date)} ·{" "}
-                        {formatWeekday(selectedCalendarDay.date)}
-                      </h3>
-                      <p className="mt-2 text-sm font-bold text-slate-500">
-                        รายละเอียดห้องว่าง ห้องที่จอง และห้องที่ล็อกไว้ในวันนี้
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCalendarDay(null)}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
-                    >
-                      <XCircle size={18} className="text-white" />
-                      <span className="text-white">ปิด</span>
-                    </button>
-                  </div>
-
-                  <div className="max-h-[calc(88vh-120px)] overflow-y-auto p-5 sm:p-6">
-                    <div className="mb-5 grid gap-3 sm:grid-cols-4">
-                      <SmallScheduleMetric
-                        label="ว่างรวม"
-                        value={selectedCalendarDay.totalAvailable}
-                      />
-                      <SmallScheduleMetric
-                        label="ลูกค้าจอง"
-                        value={selectedCalendarDay.totalCustomerBooked}
-                      />
-                      <SmallScheduleMetric
-                        label="ล็อกไว้"
-                        value={selectedCalendarDay.totalReserved}
-                      />
-                      <SmallScheduleMetric
-                        label="รวมใช้ไป"
-                        value={selectedCalendarDay.totalBooked}
-                      />
-                    </div>
-
-                    <div className="grid gap-4">
-                      {selectedCalendarDay.rooms.map((roomDay) => {
-                        const roomIsFull = roomDay.availableCount <= 0;
-                        const roomHasBooking = roomDay.bookedCount > 0;
-
-                        return (
-                          <section
-                            key={roomDay.room.id}
-                            className={[
-                              "rounded-[1.75rem] p-4 ring-1 sm:p-5",
-                              roomIsFull
-                                ? "bg-red-50 ring-red-100"
-                                : roomHasBooking
-                                  ? "bg-amber-50 ring-amber-100"
-                                  : "bg-emerald-50 ring-emerald-100",
-                            ].join(" ")}
-                          >
-                            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                              <div>
-                                <h4 className="text-xl font-black text-slate-950">
-                                  {roomDay.room.name}
-                                </h4>
-                                <p className="mt-1 text-sm font-bold text-slate-500">
-                                  ทั้งหมด {roomDay.totalRooms} ห้อง · ว่าง{" "}
-                                  {roomDay.availableCount} ห้อง · ลูกค้าจอง{" "}
-                                  {roomDay.realBookedCount} ห้อง · ล็อก{" "}
-                                  {roomDay.reservedRooms} ห้อง
-                                </p>
-                              </div>
-
-                              <span
-                                className={[
-                                  "inline-flex w-fit rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  roomIsFull
-                                    ? "bg-red-100 text-red-700 ring-red-200"
-                                    : roomHasBooking
-                                      ? "bg-amber-100 text-amber-700 ring-amber-200"
-                                      : "bg-emerald-100 text-emerald-700 ring-emerald-200",
-                                ].join(" ")}
-                              >
-                                {roomIsFull ? "ห้องเต็ม" : `เหลือ ${roomDay.availableCount} ห้อง`}
-                              </span>
-                            </div>
-
-                            {roomDay.bookings.length === 0 ? (
-                              <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-sm font-black text-slate-500 ring-1 ring-white">
-                                ไม่มีลูกค้าจองห้องประเภทนี้ในวันนี้
-                              </div>
-                            ) : (
-                              <div className="mt-4 grid gap-3">
-                                {roomDay.bookings.map((booking) => {
-                                  const statusInfo = getStatusInfo(booking.status);
-                                  const paymentInfo = getPaymentStatusInfo(
-                                    booking.paymentStatus
-                                  );
-                                  const StatusIcon = statusInfo.icon;
-                                  const PaymentIcon = paymentInfo.icon;
-
-                                  return (
-                                    <Link
-                                      key={booking.id}
-                                      href={`/admin/bookings/${booking.id}`}
-                                      className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
-                                    >
-                                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                        <div className="min-w-0">
-                                          <p className="truncate text-lg font-black text-slate-950">
-                                            {booking.displayName || "ลูกค้า"}
-                                          </p>
-                                          <p className="mt-1 truncate text-sm font-bold text-slate-500">
-                                            {booking.bookingCode || `#${booking.id}`} ·{" "}
-                                            {Math.max(
-                                              Number(booking.roomCount || 1),
-                                              1
-                                            )}{" "}
-                                            ห้อง · โทร {booking.phone || "-"}
-                                          </p>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                                          <span
-                                            className={[
-                                              "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
-                                              statusInfo.className,
-                                            ].join(" ")}
-                                          >
-                                            <StatusIcon
-                                              size={15}
-                                              className={statusInfo.iconClass}
-                                            />
-                                            {statusInfo.label}
-                                          </span>
-
-                                          {booking.paymentStatus !== "REJECTED" && (
-                                            <span
-                                              className={[
-                                                "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
-                                                paymentInfo.className,
-                                              ].join(" ")}
-                                            >
-                                              <PaymentIcon
-                                                size={15}
-                                                className={paymentInfo.iconClass}
-                                              />
-                                              {paymentInfo.label}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </Link>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </section>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CalendarDayModal
+                selectedCalendarDay={selectedCalendarDay}
+                onClose={() => setSelectedCalendarDay(null)}
+              />
             )}
 
-            <section className="mt-5">
-              <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
-                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
-                      Latest Bookings
-                    </p>
+            <LatestBookingsSection latestBookings={latestBookings} />
+          </>
+        )}
+      </section>
+    </main>
+  );
+}
 
-                    <h2 className="mt-2 text-3xl font-black text-slate-950">
-                      รายการจองล่าสุด
-                    </h2>
+function DashboardStatCard({
+  title,
+  value,
+  detail,
+  icon,
+  tone,
+}: {
+  title: string;
+  value: string | number;
+  detail?: string;
+  icon: ReactNode;
+  tone: "black" | "green" | "orange" | "blue" | "amber" | "slate" | "red";
+}) {
+  const toneClass = getDashboardToneClass(tone);
 
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                      รายการล่าสุดที่ลูกค้าส่งเข้ามาในระบบจอง
-                    </p>
+  return (
+    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+      <div
+        className={[
+          "flex h-14 w-14 items-center justify-center rounded-2xl ring-1",
+          toneClass.icon,
+        ].join(" ")}
+      >
+        {icon}
+      </div>
+
+      <p className="mt-5 text-sm font-bold text-slate-500">{title}</p>
+
+      <p className="mt-2 text-4xl font-black text-slate-950">{value}</p>
+
+      {detail && <p className="mt-2 text-sm font-bold text-slate-500">{detail}</p>}
+    </div>
+  );
+}
+
+function MiniSummaryCard({
+  title,
+  value,
+  detail,
+  green,
+  orange,
+  red,
+}: {
+  title: string;
+  value: string | number;
+  detail: string;
+  green?: boolean;
+  orange?: boolean;
+  red?: boolean;
+}) {
+  const valueClass = green
+    ? "text-emerald-600"
+    : orange
+      ? "text-orange-600"
+      : red
+        ? "text-red-600"
+        : "text-slate-950";
+
+  return (
+    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <p className="text-sm font-bold text-slate-500">{title}</p>
+      <p className={["mt-2 text-4xl font-black", valueClass].join(" ")}>
+        {value}
+      </p>
+      <p className="mt-2 text-xs font-bold leading-5 text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function getDashboardToneClass(
+  tone: "black" | "green" | "orange" | "blue" | "amber" | "slate" | "red",
+) {
+  if (tone === "green") {
+    return {
+      icon: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    };
+  }
+
+  if (tone === "orange") {
+    return {
+      icon: "bg-orange-50 text-orange-600 ring-orange-100",
+    };
+  }
+
+  if (tone === "blue") {
+    return {
+      icon: "bg-blue-50 text-blue-600 ring-blue-100",
+    };
+  }
+
+  if (tone === "amber") {
+    return {
+      icon: "bg-amber-50 text-amber-600 ring-amber-100",
+    };
+  }
+
+  if (tone === "red") {
+    return {
+      icon: "bg-red-50 text-red-600 ring-red-100",
+    };
+  }
+
+  if (tone === "slate") {
+    return {
+      icon: "bg-slate-100 text-slate-600 ring-slate-200",
+    };
+  }
+
+  return {
+    icon: "bg-slate-950 text-white ring-slate-950",
+  };
+}
+
+function CalendarDayModal({
+  selectedCalendarDay,
+  onClose,
+}: {
+  selectedCalendarDay: CalendarDaySummary;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-slate-950/60 p-3 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-2xl ring-1 ring-slate-200"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+              Booking Details
+            </p>
+
+            <h3 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">
+              {formatDateOnly(selectedCalendarDay.date)} ·{" "}
+              {formatWeekday(selectedCalendarDay.date)}
+            </h3>
+
+            <p className="mt-2 text-sm font-bold text-slate-500">
+              รายละเอียดห้องว่าง ห้องที่จองจาก Gorilla, Rhino และห้องที่ล็อกไว้
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+          >
+            <XCircle size={18} className="text-white" />
+            <span className="text-white">ปิด</span>
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-120px)] overflow-y-auto p-5 sm:p-6">
+          <div className="mb-5 grid gap-3 sm:grid-cols-5">
+            <SmallScheduleMetric
+              label="ว่างรวม"
+              value={selectedCalendarDay.totalAvailable}
+            />
+            <SmallScheduleMetric
+              label="Gorilla"
+              value={selectedCalendarDay.totalLocalCustomerBooked}
+            />
+            <SmallScheduleMetric
+              label="Rhino"
+              value={selectedCalendarDay.totalCentralRhinoBooked}
+            />
+            <SmallScheduleMetric
+              label="ล็อกไว้"
+              value={selectedCalendarDay.totalReserved}
+            />
+            <SmallScheduleMetric
+              label="รวมใช้ไป"
+              value={selectedCalendarDay.totalBooked}
+            />
+          </div>
+
+          <div className="grid gap-4">
+            {selectedCalendarDay.rooms.map((roomDay) => {
+              const roomIsFull = roomDay.availableCount <= 0;
+              const roomHasBooking = roomDay.bookedCount > 0;
+
+              return (
+                <section
+                  key={roomDay.room.id}
+                  className={[
+                    "rounded-[1.75rem] p-4 ring-1 sm:p-5",
+                    roomIsFull
+                      ? "bg-red-50 ring-red-100"
+                      : roomHasBooking
+                        ? "bg-amber-50 ring-amber-100"
+                        : "bg-emerald-50 ring-emerald-100",
+                  ].join(" ")}
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <h4 className="text-xl font-black text-slate-950">
+                        {roomDay.room.name}
+                      </h4>
+
+                      <p className="mt-1 text-sm font-bold text-slate-500">
+                        ทั้งหมด {roomDay.totalRooms} ห้อง · ว่าง{" "}
+                        {roomDay.availableCount} ห้อง · Gorilla จอง{" "}
+                        {roomDay.localBookedCount} ห้อง · Rhino จอง{" "}
+                        {roomDay.centralRhinoBookedCount} ห้อง · ล็อก{" "}
+                        {roomDay.reservedRooms} ห้อง
+                      </p>
+                    </div>
+
+                    <span
+                      className={[
+                        "inline-flex w-fit rounded-2xl px-4 py-2 text-sm font-black ring-1",
+                        roomIsFull
+                          ? "bg-red-100 text-red-700 ring-red-200"
+                          : roomHasBooking
+                            ? "bg-amber-100 text-amber-700 ring-amber-200"
+                            : "bg-emerald-100 text-emerald-700 ring-emerald-200",
+                      ].join(" ")}
+                    >
+                      {roomIsFull
+                        ? "ห้องเต็ม"
+                        : `เหลือ ${roomDay.availableCount} ห้อง`}
+                    </span>
                   </div>
 
-                  <Link
-                    href="/admin/bookings"
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
-                  >
-                    <span className="text-white">ดูทั้งหมด</span>
-                    <ArrowRight size={18} className="text-white" />
-                  </Link>
-                </div>
+                  {roomDay.centralRhinoBookedCount > 0 && (
+                    <div className="mt-4 rounded-2xl bg-orange-100 p-4 text-sm font-black text-orange-700 ring-1 ring-orange-200">
+                      มีรายการจองจาก Rhino จำนวน {roomDay.centralRhinoBookedCount}{" "}
+                      ห้อง ระบบนำมาหักจำนวนห้องว่างของ Gorilla แล้ว
+                    </div>
+                  )}
 
-                {latestBookings.length === 0 ? (
-                  <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[2rem] bg-slate-50 p-8 text-center ring-1 ring-slate-200">
-                    <CalendarCheck size={42} className="text-slate-400" />
-                    <h3 className="mt-5 text-2xl font-black text-slate-950">
-                      ยังไม่มีรายการจอง
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      เมื่อลูกค้าส่งคำขอจอง รายการจะแสดงที่นี่
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {latestBookings.map((booking) => {
-                      const statusInfo = getStatusInfo(booking.status);
-                      const paymentInfo = getPaymentStatusInfo(
-                        booking.paymentStatus
-                      );
-                      const StatusIcon = statusInfo.icon;
-                      const PaymentIcon = paymentInfo.icon;
-
-                      return (
-                        <div
-                          key={booking.id}
-                          className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:bg-white hover:shadow-sm"
-                        >
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
-                                {booking.pictureUrl ? (
-                                  <img
-                                    src={booking.pictureUrl}
-                                    alt={booking.displayName || "customer"}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <Users size={26} />
-                                )}
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="truncate font-black text-slate-950">
-                                  {booking.displayName || "ลูกค้า"}
-                                </p>
-                                <p className="truncate text-sm text-slate-500">
-                                  {booking.roomType?.name || "ห้องพัก"} •{" "}
-                                  {formatDateTime(booking.createdAt)}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 sm:justify-end">
-                              <div
-                                className={[
-                                  "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                  statusInfo.className,
-                                ].join(" ")}
-                              >
-                                <StatusIcon
-                                  size={17}
-                                  className={statusInfo.iconClass}
-                                />
-                                {statusInfo.label}
-                              </div>
-
-                              {booking.paymentStatus !== "REJECTED" && (
-                                <div
-                                  className={[
-                                    "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
-                                    paymentInfo.className,
-                                  ].join(" ")}
-                                >
-                                  <PaymentIcon
-                                    size={17}
-                                    className={paymentInfo.iconClass}
-                                  />
-                                  {paymentInfo.label}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <aside className="hidden">
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
-                  <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
-                    Payment Queue
-                  </p>
-
-                  <h2 className="mt-2 text-3xl font-black text-slate-950">
-                    คิวตรวจสลิปล่าสุด
-                  </h2>
-
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    รายการที่มีสถานะการชำระเงินล่าสุด
-                  </p>
-
-                  <div className="mt-6 grid gap-3">
-                    {latestPaymentBookings.length === 0 ? (
-                      <div className="rounded-2xl bg-slate-50 p-5 text-center ring-1 ring-slate-200">
-                        <ReceiptText
-                          size={34}
-                          className="mx-auto text-slate-400"
-                        />
-                        <p className="mt-3 font-black text-slate-950">
-                          ยังไม่มีรายการชำระเงิน
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          เมื่อมีการแนบสลิปจะแสดงที่นี่
-                        </p>
-                      </div>
-                    ) : (
-                      latestPaymentBookings.map((booking) => {
+                  {roomDay.bookings.length === 0 ? (
+                    <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-sm font-black text-slate-500 ring-1 ring-white">
+                      ไม่มีลูกค้าจองจาก Gorilla ในห้องประเภทนี้วันนี้
+                    </div>
+                  ) : (
+                    <div className="mt-4 grid gap-3">
+                      {roomDay.bookings.map((booking) => {
+                        const statusInfo = getStatusInfo(booking.status);
                         const paymentInfo = getPaymentStatusInfo(
-                          booking.paymentStatus
+                          booking.paymentStatus,
                         );
+                        const StatusIcon = statusInfo.icon;
                         const PaymentIcon = paymentInfo.icon;
 
                         return (
                           <Link
                             key={booking.id}
-                            href="/admin/bookings"
-                            className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:bg-white hover:shadow-sm"
+                            href={`/admin/bookings/${booking.id}`}
+                            className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
                           >
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                               <div className="min-w-0">
-                                <p className="truncate font-black text-slate-950">
+                                <p className="truncate text-lg font-black text-slate-950">
                                   {booking.displayName || "ลูกค้า"}
                                 </p>
-                                <p className="mt-1 truncate text-sm text-slate-500">
-                                  {booking.bookingCode ||
-                                    `BOOKING-${booking.id}`}
-                                </p>
-                                <p className="mt-2 text-sm font-black text-emerald-700">
-                                  {formatCurrency(booking.depositAmount || 0)}
+
+                                <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                                  {booking.bookingCode || `#${booking.id}`} ·{" "}
+                                  {Math.max(Number(booking.roomCount || 1), 1)}{" "}
+                                  ห้อง · โทร {booking.phone || "-"}
                                 </p>
                               </div>
 
-                              <div
-                                className={[
-                                  "inline-flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
-                                  paymentInfo.className,
-                                ].join(" ")}
-                              >
-                                <PaymentIcon
-                                  size={15}
-                                  className={paymentInfo.iconClass}
-                                />
-                                {paymentInfo.label}
+                              <div className="flex flex-wrap gap-2 lg:justify-end">
+                                <span
+                                  className={[
+                                    "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
+                                    statusInfo.className,
+                                  ].join(" ")}
+                                >
+                                  <StatusIcon
+                                    size={15}
+                                    className={statusInfo.iconClass}
+                                  />
+                                  {statusInfo.label}
+                                </span>
+
+                                {booking.paymentStatus !== "REJECTED" && (
+                                  <span
+                                    className={[
+                                      "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-black ring-1",
+                                      paymentInfo.className,
+                                    ].join(" ")}
+                                  >
+                                    <PaymentIcon
+                                      size={15}
+                                      className={paymentInfo.iconClass}
+                                    />
+                                    {paymentInfo.label}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </Link>
                         );
-                      })
-                    )}
-                  </div>
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                  <Link
-                    href="/admin/bookings"
-                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-4 text-sm font-black text-white transition hover:bg-emerald-700"
-                  >
-                    <span className="text-white">ไปตรวจสลิปทั้งหมด</span>
-                    <ArrowRight size={18} className="text-white" />
-                  </Link>
-                </div>
+function LatestBookingsSection({
+  latestBookings,
+}: {
+  latestBookings: BookingItem[];
+}) {
+  return (
+    <section className="mt-5">
+      <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
+              Latest Bookings
+            </p>
 
-                <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:rounded-[2.5rem] sm:p-8">
-                  <p className="text-sm font-black uppercase tracking-wide text-emerald-600">
-                    Room Summary
-                  </p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950">
+              รายการจองล่าสุด
+            </h2>
 
-                  <h2 className="mt-2 text-3xl font-black text-slate-950">
-                    สรุปห้องพัก
-                  </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              รายการล่าสุดที่ลูกค้าส่งเข้ามาในระบบจอง Gorilla
+            </p>
+          </div>
 
-                  <div className="mt-6 grid gap-3">
-                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                            Active Room Types
-                          </p>
-                          <p className="mt-1 text-3xl font-black text-slate-950">
-                            {activeRooms.length}
-                          </p>
-                        </div>
-                        <BedDouble size={30} className="text-slate-400" />
+          <Link
+            href="/admin/bookings"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+          >
+            <span className="text-white">ดูทั้งหมด</span>
+            <ArrowRight size={18} className="text-white" />
+          </Link>
+        </div>
+
+        {latestBookings.length === 0 ? (
+          <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[2rem] bg-slate-50 p-8 text-center ring-1 ring-slate-200">
+            <CalendarCheck size={42} className="text-slate-400" />
+            <h3 className="mt-5 text-2xl font-black text-slate-950">
+              ยังไม่มีรายการจอง
+            </h3>
+            <p className="mt-2 text-sm text-slate-500">
+              เมื่อลูกค้าส่งคำขอจอง รายการจะแสดงที่นี่
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {latestBookings.map((booking) => {
+              const statusInfo = getStatusInfo(booking.status);
+              const paymentInfo = getPaymentStatusInfo(booking.paymentStatus);
+              const StatusIcon = statusInfo.icon;
+              const PaymentIcon = paymentInfo.icon;
+
+              return (
+                <div
+                  key={booking.id}
+                  className="rounded-[2rem] bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:bg-white hover:shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
+                        {booking.pictureUrl ? (
+                          <img
+                            src={booking.pictureUrl}
+                            alt={booking.displayName || "customer"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Users size={26} />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate font-black text-slate-950">
+                          {booking.displayName || "ลูกค้า"}
+                        </p>
+
+                        <p className="truncate text-sm text-slate-500">
+                          {booking.roomType?.name || "ห้องพัก"} •{" "}
+                          {formatDateTime(booking.createdAt)}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-950 p-4 text-white">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                            Total Rooms
-                          </p>
-                          <p className="mt-1 text-3xl font-black text-white">
-                            {totalRoomCount}
-                          </p>
-                        </div>
-                        <Hotel size={30} className="text-white" />
+                    <div className="flex flex-wrap gap-2 sm:justify-end">
+                      <div
+                        className={[
+                          "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
+                          statusInfo.className,
+                        ].join(" ")}
+                      >
+                        <StatusIcon
+                          size={17}
+                          className={statusInfo.iconClass}
+                        />
+                        {statusInfo.label}
                       </div>
-                    </div>
 
-                    <div className="rounded-2xl bg-red-50 p-4 ring-1 ring-red-100">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-wide text-red-600">
-                            Disabled Types
-                          </p>
-                          <p className="mt-1 text-3xl font-black text-red-700">
-                            {inactiveRooms.length}
-                          </p>
+                      {booking.paymentStatus !== "REJECTED" && (
+                        <div
+                          className={[
+                            "inline-flex w-fit items-center gap-2 rounded-2xl px-4 py-2 text-sm font-black ring-1",
+                            paymentInfo.className,
+                          ].join(" ")}
+                        >
+                          <PaymentIcon
+                            size={17}
+                            className={paymentInfo.iconClass}
+                          />
+                          {paymentInfo.label}
                         </div>
-                        <XCircle size={30} className="text-red-600" />
-                      </div>
+                      )}
                     </div>
                   </div>
-
-                  <Link
-                    href="/admin/rooms"
-                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800"
-                  >
-                    <span className="text-white">จัดการห้องพัก</span>
-                    <ArrowRight size={18} className="text-white" />
-                  </Link>
                 </div>
-
-                <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 p-5 text-white shadow-xl shadow-slate-300 sm:rounded-[2.5rem] sm:p-8">
-                  <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl" />
-
-                  <div className="relative z-10">
-                    <ShieldCheck size={34} className="text-emerald-300" />
-
-                    <h2 className="mt-5 text-3xl font-black text-white">
-                      งานที่ควรทำต่อ
-                    </h2>
-
-                    <p className="mt-3 text-sm leading-7 text-slate-300">
-                      ตรวจสอบรายการรอตรวจสลิป กดยืนยันชำระเงินหรือปฏิเสธสลิป
-                      เพื่อให้สถานะในหน้าลูกค้าอัปเดตล่าสุด
-                    </p>
-
-                    <Link
-                      href="/admin/bookings"
-                      className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 text-sm font-black text-slate-950 transition hover:bg-slate-100"
-                    >
-                      <span className="text-slate-950">
-                        ไปจัดการรายการจอง
-                      </span>
-                      <ArrowRight size={18} className="text-slate-950" />
-                    </Link>
-                  </div>
-                </div>
-              </aside>
-            </section>
-          </>
+              );
+            })}
+          </div>
         )}
-
-      </section>
-    </main>
+      </div>
+    </section>
   );
 }
 
@@ -1592,7 +1717,7 @@ function CalendarLegendCard({
   label,
   detail,
 }: {
-  tone: "green" | "amber" | "red" | "slate";
+  tone: "green" | "amber" | "orange" | "red" | "slate";
   label: string;
   detail: string;
 }) {
@@ -1601,9 +1726,11 @@ function CalendarLegendCard({
       ? "bg-emerald-50 ring-emerald-100 text-emerald-700"
       : tone === "amber"
         ? "bg-amber-50 ring-amber-100 text-amber-700"
-        : tone === "red"
-          ? "bg-red-50 ring-red-100 text-red-700"
-          : "bg-slate-50 ring-slate-200 text-slate-700";
+        : tone === "orange"
+          ? "bg-orange-50 ring-orange-100 text-orange-700"
+          : tone === "red"
+            ? "bg-red-50 ring-red-100 text-red-700"
+            : "bg-slate-50 ring-slate-200 text-slate-700";
 
   return (
     <div className={["rounded-2xl p-4 ring-1", toneClass].join(" ")}>
@@ -1620,9 +1747,14 @@ function SmallScheduleMetric({
   label: string;
   value: number;
 }) {
-  const isBookingCount = label === "จอง";
   const valueClass =
-    isBookingCount && value > 0 ? "text-red-600" : "text-slate-950";
+    label === "Rhino" && value > 0
+      ? "text-orange-600"
+      : label === "จอง" && value > 0
+        ? "text-red-600"
+        : label === "Gorilla" && value > 0
+          ? "text-red-600"
+          : "text-slate-950";
 
   return (
     <div className="rounded-xl bg-slate-100 px-2 py-2">
