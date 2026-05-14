@@ -16,11 +16,7 @@ type CentralBookingRow = {
   booking_status?: string | null;
   payment_status?: string | null;
   status?: string | null;
-  cart_data?: {
-    checkIn?: string;
-    checkOut?: string;
-    items?: CentralBookingCartItem[];
-  } | null;
+  cart_data?: unknown;
 };
 
 type CentralRoomTypeRow = {
@@ -51,6 +47,40 @@ function overlaps(
 ) {
   if (!checkIn || !checkOut) return false;
   return checkIn < rangeEnd && checkOut > rangeStart;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value) return {};
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function normalizeCentralCartData(value: unknown) {
+  const cart = asRecord(value);
+  const rawItems = Array.isArray(cart.items) ? cart.items : [];
+
+  return {
+    checkIn: typeof cart.checkIn === "string" ? cart.checkIn : "",
+    checkOut: typeof cart.checkOut === "string" ? cart.checkOut : "",
+    items: rawItems
+      .filter((item) => item && typeof item === "object")
+      .map((item) => item as CentralBookingCartItem),
+  };
 }
 
 function mapGorillaRoomTypeIdToRhinoSlugs(gorillaRoomTypeId: number) {
@@ -181,8 +211,15 @@ export async function getCentralRhinoBookedRoomCount({
     let total = 0;
 
     ((data || []) as CentralBookingRow[]).forEach((booking) => {
-      const bookingCheckIn = booking.check_in || booking.cart_data?.checkIn;
-      const bookingCheckOut = booking.check_out || booking.cart_data?.checkOut;
+      const cartData = normalizeCentralCartData(booking.cart_data);
+      const bookingCheckIn = booking.check_in || cartData.checkIn;
+      const bookingCheckOut = booking.check_out || cartData.checkOut;
+
+      // Gorilla already counts its own local Booking rows. Central rows synced
+      // from Gorilla are kept for Rhino, but must not be counted again here.
+      if (String(asRecord(booking.cart_data).source || "").toLowerCase() === "gorilla") {
+        return;
+      }
 
       if (!isBookingStillHoldingRoom(booking)) return;
 
@@ -190,7 +227,7 @@ export async function getCentralRhinoBookedRoomCount({
         return;
       }
 
-      booking.cart_data?.items?.forEach((item) => {
+      cartData.items.forEach((item) => {
         const slug = getItemSlug(item, roomSlugById);
 
         if (!targetSlugs.includes(slug)) return;

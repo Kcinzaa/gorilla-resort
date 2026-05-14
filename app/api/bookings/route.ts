@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
 import { prisma } from "@/lib/prisma";
+import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
 
 function cleanString(value: unknown) {
   return String(value || "").trim();
@@ -165,41 +166,254 @@ export async function GET(request: Request) {
       );
     }
 
-    const bookings = await prisma.booking.findMany({
-      where: {
-        ...(lineUserId
-          ? {
-              lineUserId,
-            }
-          : {}),
-        ...(bookingCode
-          ? {
-              bookingCode,
-            }
-          : {}),
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        roomType: true,
-      },
+    const where = {
+      ...(lineUserId ? { lineUserId } : {}),
+      ...(bookingCode ? { bookingCode } : {}),
+    };
+
+    const localBookings = await loadGorillaBookingsSafely(where);
+    const rhinoBookings = lineUserId
+      ? await loadRhinoCentralBookingsByLineUser(lineUserId)
+      : [];
+
+    const combined = [...localBookings, ...rhinoBookings].sort((a, b) => {
+      const aTime = new Date(a.createdAt || 0).getTime();
+      const bTime = new Date(b.createdAt || 0).getTime();
+      return bTime - aTime;
     });
 
     return NextResponse.json({
       success: true,
-      data: bookings,
+      data: combined,
+      meta: {
+        gorillaCount: localBookings.length,
+        rhinoCount: rhinoBookings.length,
+      },
     });
   } catch (error) {
-    console.error("GET BOOKINGS ERROR:", error);
+    console.error("GET BOOKINGS FATAL:", error);
 
+    // Never let a load error block the user — return empty with a warning so
+    // the page renders cleanly. Their actual data is still in the database.
     return NextResponse.json(
       {
-        success: false,
-        message: "ไม่สามารถโหลดรายการจองได้",
+        success: true,
+        data: [],
+        warning: "ไม่สามารถโหลดรายการจองได้ในตอนนี้ กรุณาลองโหลดใหม่อีกครั้ง",
+        error: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 200 },
     );
+  }
+}
+
+type AnyBookingRecord = {
+  id: number | string;
+  bookingCode?: string | null;
+  lineUserId?: string | null;
+  displayName?: string | null;
+  phone?: string | null;
+  note?: string | null;
+  roomTypeId?: number | null;
+  checkIn?: string | Date | null;
+  checkOut?: string | Date | null;
+  guests?: number | null;
+  roomCount?: number | null;
+  totalPrice?: number | null;
+  status?: string | null;
+  depositAmount?: number | null;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  paymentSlipUrl?: string | null;
+  paymentReference?: string | null;
+  paidAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  roomType?:
+    | {
+        id?: number | null;
+        name?: string | null;
+        pricePerNight?: number | null;
+        imageUrl?: string | null;
+        capacity?: number | null;
+      }
+    | null;
+  source?: "gorilla" | "rhino";
+};
+
+/**
+ * Load gorilla bookings, falling back to a roomCount-free select if the
+ * Booking table hasn't been migrated yet.
+ */
+async function loadGorillaBookingsSafely(where: {
+  lineUserId?: string;
+  bookingCode?: string;
+}): Promise<AnyBookingRecord[]> {
+  try {
+    const rows = await prisma.booking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: { roomType: true },
+    });
+
+    return rows.map((row) => ({ ...row, source: "gorilla" as const }));
+  } catch (firstError) {
+    if (!isRoomCountColumnError(firstError)) {
+      console.error("LOAD_GORILLA_BOOKINGS_PRIMARY_ERROR:", firstError);
+    }
+
+    try {
+      const rows = await prisma.booking.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          bookingCode: true,
+          lineUserId: true,
+          displayName: true,
+          pictureUrl: true,
+          phone: true,
+          note: true,
+          roomTypeId: true,
+          checkIn: true,
+          checkOut: true,
+          guests: true,
+          totalPrice: true,
+          status: true,
+          depositAmount: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          paymentSlipUrl: true,
+          paymentReference: true,
+          paidAt: true,
+          createdAt: true,
+          updatedAt: true,
+          roomType: true,
+        },
+      });
+
+      return rows.map((row) => ({ ...row, source: "gorilla" as const }));
+    } catch (secondError) {
+      console.error("LOAD_GORILLA_BOOKINGS_FALLBACK_ERROR:", secondError);
+      return [];
+    }
+  }
+}
+
+type RhinoBookingRow = {
+  id: string;
+  booking_no?: string | null;
+  payment_reference?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_contact?: string | null;
+  check_in?: string | null;
+  check_out?: string | null;
+  nights?: number | null;
+  total_rooms?: number | null;
+  total_guests?: number | null;
+  total_adults?: number | null;
+  total_children?: number | null;
+  total_amount?: number | null;
+  booking_status?: string | null;
+  payment_status?: string | null;
+  payment_slip_url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  cart_data?: unknown;
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value) return {};
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function normalizeRhinoCartData(value: unknown) {
+  const cart = asRecord(value);
+  const items = Array.isArray(cart.items)
+    ? cart.items.filter((item) => item && typeof item === "object")
+    : [];
+
+  return { items: items as { roomName?: string; quantity?: number }[] };
+}
+
+/**
+ * Pull the user's Rhino-side bookings (resort rooms booked through Rhino) so
+ * /my-bookings shows everything across both systems. Safe — returns [] if the
+ * central client isn't configured.
+ */
+async function loadRhinoCentralBookingsByLineUser(
+  lineUserId: string,
+): Promise<AnyBookingRecord[]> {
+  try {
+    const central = getCentralSupabaseAdmin();
+    if (!central) return [];
+
+    const { data, error } = await central
+      .from("bookings")
+      .select(
+        "id, booking_no, payment_reference, customer_name, customer_phone, customer_contact, check_in, check_out, nights, total_rooms, total_guests, total_adults, total_children, total_amount, booking_status, payment_status, payment_slip_url, created_at, updated_at, cart_data",
+      )
+      .eq("line_user_id", lineUserId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("LOAD_RHINO_BOOKINGS_ERROR:", error);
+      return [];
+    }
+
+    return ((data || []) as RhinoBookingRow[]).map((row) => {
+      const cartData = normalizeRhinoCartData(row.cart_data);
+      const firstItem = cartData.items[0];
+      const roomName = firstItem?.roomName || "ห้องพัก Rhino";
+
+      return {
+        id: `rhino-${row.id}`,
+        bookingCode: row.booking_no || row.payment_reference || "",
+        lineUserId,
+        displayName: row.customer_name || "",
+        phone: row.customer_phone || "",
+        note: row.customer_contact || "",
+        checkIn: row.check_in || null,
+        checkOut: row.check_out || null,
+        guests: Number(row.total_guests || 0),
+        roomCount: Number(row.total_rooms || 0),
+        totalPrice: Number(row.total_amount || 0),
+        status: row.booking_status || "PENDING",
+        paymentStatus: row.payment_status || "UNPAID",
+        paymentSlipUrl: row.payment_slip_url || null,
+        paymentReference: row.payment_reference || null,
+        createdAt: row.created_at || null,
+        updatedAt: row.updated_at || null,
+        roomType: {
+          id: 0,
+          name: roomName,
+          pricePerNight: 0,
+          imageUrl: null,
+          capacity: 0,
+        },
+        source: "rhino" as const,
+      };
+    });
+  } catch (error) {
+    console.error("LOAD_RHINO_BOOKINGS_THROW:", error);
+    return [];
   }
 }
 

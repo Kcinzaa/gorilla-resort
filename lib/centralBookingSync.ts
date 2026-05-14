@@ -151,11 +151,21 @@ export async function syncGorillaBookingToCentral(booking: GorillaBooking) {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await central
+  const { data: existingBooking, error: existingError } = await central
     .from("bookings")
-    .upsert(payload, { onConflict: "booking_no" })
-    .select("*")
-    .single();
+    .select("id")
+    .eq("booking_no", booking.bookingCode)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const query = existingBooking?.id
+    ? central.from("bookings").update(payload).eq("id", existingBooking.id)
+    : central.from("bookings").insert(payload);
+
+  const { data, error } = await query.select("*").single();
 
   if (error) {
     throw new Error(error.message);
