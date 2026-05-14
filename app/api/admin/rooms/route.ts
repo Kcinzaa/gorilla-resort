@@ -15,7 +15,7 @@ const FALLBACK_GORILLA_ROOMS = [
     capacity: 2,
     totalRooms: 16,
     reservedRooms: 6,
-    imageUrl: "/images/room/standard.jpg",
+    imageUrl: "/images/S__37019660_0.jpg",
     isActive: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),
@@ -28,7 +28,7 @@ const FALLBACK_GORILLA_ROOMS = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/room/king-double.jpg",
+    imageUrl: "/images/AA6292A7-4B4B-452D-8C8A-B20791839228.jpg",
     isActive: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),
@@ -41,7 +41,7 @@ const FALLBACK_GORILLA_ROOMS = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/room/king-single.jpg",
+    imageUrl: "/images/DB5B7FFF-8EE4-448E-B5B8-7CED9A9E3E70.jpg",
     isActive: true,
     createdAt: new Date(0),
     updatedAt: new Date(0),
@@ -138,14 +138,6 @@ export async function GET(request: Request) {
       data: FALLBACK_GORILLA_ROOMS,
       warning: "ใช้ข้อมูลสำรองของ Gorilla เนื่องจากโหลดรายการห้องพักไม่สำเร็จ",
     });
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "ไม่สามารถโหลดรายการห้องพักได้",
-      },
-      { status: 500 }
-    );
   }
 }
 
