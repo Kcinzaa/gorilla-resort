@@ -125,11 +125,23 @@ async function getAvailableRooms({
     checkIn,
     checkOut,
   });
-  const centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
-    gorillaRoomTypeId: roomTypeId,
-    checkIn,
-    checkOut,
-  });
+
+  let centralRhinoBookedRooms = 0;
+
+  try {
+    centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+      gorillaRoomTypeId: roomTypeId,
+      checkIn,
+      checkOut,
+    });
+  } catch (error) {
+    console.error("GET_BOOKING_AVAILABLE_ROOMS_CENTRAL_COUNT_ERROR:", {
+      roomTypeId,
+      checkIn,
+      checkOut,
+      error,
+    });
+  }
 
   const totalRooms = roomType.totalRooms ?? 1;
   const reservedRooms = Math.min(Number(roomType.reservedRooms || 0), totalRooms);

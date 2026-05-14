@@ -26,6 +26,42 @@ type BookingRow = {
   roomCount?: number | null;
 };
 
+const FALLBACK_GORILLA_ROOMS: RoomTypeRow[] = [
+  {
+    id: 1,
+    name: "Standard room",
+    description: "ห้องรีสอร์ท 2 ท่าน",
+    pricePerNight: 700,
+    capacity: 2,
+    totalRooms: 16,
+    reservedRooms: 6,
+    imageUrl: "/images/room/standard.jpg",
+    isActive: true,
+  },
+  {
+    id: 5,
+    name: "King size room double",
+    description: "ห้องรีสอร์ทเตียงคู่",
+    pricePerNight: 1200,
+    capacity: 2,
+    totalRooms: 2,
+    reservedRooms: 0,
+    imageUrl: "/images/room/king-double.jpg",
+    isActive: true,
+  },
+  {
+    id: 6,
+    name: "King size room single",
+    description: "ห้องรีสอร์ทเตียงเดี่ยว",
+    pricePerNight: 1200,
+    capacity: 2,
+    totalRooms: 2,
+    reservedRooms: 0,
+    imageUrl: "/images/room/king-single.jpg",
+    isActive: true,
+  },
+];
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message;
@@ -96,14 +132,15 @@ async function loadActiveRooms() {
   try {
     return (await loadRooms(true)) as RoomTypeRow[];
   } catch (error) {
-    if (!isReservedRoomsColumnError(error)) {
-      throw error;
+    if (isReservedRoomsColumnError(error)) {
+      return (await loadRooms(false)).map((room) => ({
+        ...room,
+        reservedRooms: 0,
+      })) as RoomTypeRow[];
     }
 
-    return (await loadRooms(false)).map((room) => ({
-      ...room,
-      reservedRooms: 0,
-    })) as RoomTypeRow[];
+    console.error("LOAD_GORILLA_ROOMS_FALLBACK_USED", error);
+    return FALLBACK_GORILLA_ROOMS;
   }
 }
 
@@ -256,7 +293,14 @@ export async function GET(request: Request) {
       );
     }
 
-    const bookings = await loadBookingsForDateRange(checkIn, checkOut);
+    let bookings: BookingRow[] = [];
+
+    try {
+      bookings = await loadBookingsForDateRange(checkIn, checkOut);
+    } catch (error) {
+      console.error("LOAD_GORILLA_BOOKINGS_FOR_AVAILABILITY_FAILED", error);
+      bookings = [];
+    }
     const bookedCountByRoomType = getBookedCountByRoomType(bookings);
 
     const data = await Promise.all(
@@ -357,16 +401,42 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET PUBLIC ROOMS ERROR:", error);
 
+    const data = FALLBACK_GORILLA_ROOMS.map((room) => {
+      const totalRooms = Number(room.totalRooms || 0);
+      const reservedRooms = Math.min(
+        Math.max(Number(room.reservedRooms || 0), 0),
+        totalRooms,
+      );
+      const availableRooms = Math.max(totalRooms - reservedRooms, 0);
+
+      return {
+        ...room,
+        totalRooms,
+        reservedRooms,
+        localBookedRooms: 0,
+        centralRhinoBookedRooms: 0,
+        realBookedRooms: 0,
+        bookedRooms: reservedRooms,
+        availableRooms,
+        isAvailable: availableRooms > 0,
+      };
+    });
+
     return NextResponse.json(
       {
-        success: false,
-        message: "ไม่สามารถโหลดรายการห้องพักได้",
+        success: true,
+        data,
+        warning: "ใช้ข้อมูลสำรองของ Gorilla เนื่องจากโหลดฐานข้อมูลไม่สำเร็จ",
         error:
           process.env.NODE_ENV === "development"
             ? getErrorMessage(error)
             : undefined,
       },
-      { status: 500 },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      },
     );
   }
 }
