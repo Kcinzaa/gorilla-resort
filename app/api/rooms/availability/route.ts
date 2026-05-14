@@ -189,11 +189,22 @@ export async function GET(request: Request) {
       const totalRooms = Number(room.totalRooms || 0);
       const reservedRooms = Math.min(Number(room.reservedRooms || 0), totalRooms);
       const realBookedRooms = bookedCountByRoomType[room.id] || 0;
-      const centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
-        gorillaRoomTypeId: room.id,
-        checkIn,
-        checkOut,
-      });
+      let centralRhinoBookedRooms = 0;
+
+      try {
+        centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+          gorillaRoomTypeId: room.id,
+          checkIn,
+          checkOut,
+        });
+      } catch (error) {
+        console.error("GET_ROOM_AVAILABILITY_CENTRAL_COUNT_ERROR", {
+          roomTypeId: room.id,
+          roomName: room.name,
+          error,
+        });
+      }
+
       const bookedRooms = reservedRooms + realBookedRooms + centralRhinoBookedRooms;
       const availableRooms = Math.max(totalRooms - bookedRooms, 0);
 

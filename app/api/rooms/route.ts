@@ -270,11 +270,21 @@ export async function GET(request: Request) {
 
         const localBookedRooms = Number(bookedCountByRoomType[room.id] || 0);
 
-        const centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
-          gorillaRoomTypeId: room.id,
-          checkIn,
-          checkOut,
-        });
+        let centralRhinoBookedRooms = 0;
+
+        try {
+          centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+            gorillaRoomTypeId: room.id,
+            checkIn,
+            checkOut,
+          });
+        } catch (error) {
+          console.error("GET_PUBLIC_ROOMS_CENTRAL_COUNT_ERROR", {
+            roomTypeId: room.id,
+            roomName: room.name,
+            error,
+          });
+        }
 
         /**
          * realBookedRooms = ลูกค้าจองจริง

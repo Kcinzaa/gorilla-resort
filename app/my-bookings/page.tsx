@@ -29,7 +29,7 @@ type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "REJECTED";
 
 type BookingItem = {
-  id: number;
+  id: number | string;
   bookingCode?: string | null;
   lineUserId: string;
   displayName?: string | null;

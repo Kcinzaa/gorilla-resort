@@ -26,7 +26,7 @@ type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "REJECTED";
 
 type BookingItem = {
-  id: number;
+  id: number | string;
   bookingCode?: string | null;
   lineUserId: string;
   displayName?: string | null;
@@ -192,7 +192,7 @@ function getPaymentMethodLabel(method?: string | null) {
 
 export default function MyBookingDetailPage() {
   const params = useParams<{ id: string }>();
-  const bookingId = Number(params.id);
+  const bookingId = String(params.id || "");
 
   const { profile, loading: profileLoading } = useLineProfile();
   const [booking, setBooking] = useState<BookingItem | null>(null);
@@ -240,9 +240,9 @@ export default function MyBookingDetailPage() {
         return;
       }
 
-      const found = (result.data || []).find(
-        (item: BookingItem) => item.id === bookingId
-      );
+      const found = (result.data || []).find((item: BookingItem) => {
+        return String(item.id) === bookingId;
+      });
 
       if (!found) {
         setError("ไม่พบรายการจองนี้ หรือรายการนี้ไม่ใช่ของบัญชี LINE นี้");
