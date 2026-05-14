@@ -512,13 +512,6 @@ function RoomsContent() {
                       </div>
 
                       <div className="mt-5 grid gap-3">
-                        <Link
-                          href={`/rooms/${room.id}?checkIn=${checkIn}&checkOut=${checkOut}`}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-5 py-4 text-sm font-black text-slate-800 transition hover:bg-slate-200"
-                        >
-                          <Eye size={18} className="text-slate-800" />
-                          ดูรายละเอียดห้องพัก
-                        </Link>
 
                         {isAvailable ? (
                           <Link
