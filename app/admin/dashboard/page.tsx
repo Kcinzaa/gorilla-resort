@@ -441,20 +441,42 @@ export default function AdminDashboardPage() {
     });
   }, [activeRooms, activeScheduleBookings, availabilityByDate, scheduleDates]);
 
-  const todaySummary = useMemo(() => {
+  const dashboardSummaryDay = useMemo(() => {
+    if (selectedCalendarDay) return selectedCalendarDay;
+
     const todayKey = formatInputDate(new Date());
-    const day = monthlyCalendarDays.find((item) => {
+    const todayInVisibleMonth = monthlyCalendarDays.find((item) => {
       return formatInputDate(item.date) === todayKey;
     });
 
+    return todayInVisibleMonth ?? monthlyCalendarDays[0] ?? null;
+  }, [monthlyCalendarDays, selectedCalendarDay]);
+
+  const dashboardSummaryLabel = useMemo(() => {
+    if (!dashboardSummaryDay) return "วันที่เลือก";
+    if (selectedCalendarDay) {
+      return `วันที่เลือก ${formatDateOnly(selectedCalendarDay.date)}`;
+    }
+
+    const todayKey = formatInputDate(new Date());
+    const summaryKey = formatInputDate(dashboardSummaryDay.date);
+
+    if (summaryKey === todayKey) return "วันนี้";
+
+    return `${formatDateOnly(dashboardSummaryDay.date)} (วันแรกของเดือนที่เปิดอยู่)`;
+  }, [dashboardSummaryDay, selectedCalendarDay]);
+
+  const dashboardSummary = useMemo(() => {
     return {
-      totalAvailable: day?.totalAvailable ?? 0,
-      totalBooked: day?.totalBooked ?? 0,
-      totalReserved: day?.totalReserved ?? 0,
-      totalCentralRhinoBooked: day?.totalCentralRhinoBooked ?? 0,
-      totalLocalCustomerBooked: day?.totalLocalCustomerBooked ?? 0,
+      totalAvailable: dashboardSummaryDay?.totalAvailable ?? 0,
+      totalBooked: dashboardSummaryDay?.totalBooked ?? 0,
+      totalReserved: dashboardSummaryDay?.totalReserved ?? 0,
+      totalCentralRhinoBooked:
+        dashboardSummaryDay?.totalCentralRhinoBooked ?? 0,
+      totalLocalCustomerBooked:
+        dashboardSummaryDay?.totalLocalCustomerBooked ?? 0,
     };
-  }, [monthlyCalendarDays]);
+  }, [dashboardSummaryDay]);
 
   function goToPreviousMonth() {
     setSelectedCalendarDay(null);
@@ -932,8 +954,8 @@ export default function AdminDashboardPage() {
               />
 
               <DashboardStatCard
-                title="จองจาก Rhino วันนี้"
-                value={todaySummary.totalCentralRhinoBooked}
+                title="จองจาก Rhino"
+                value={dashboardSummary.totalCentralRhinoBooked}
                 icon={<Hotel size={28} className="text-orange-600" />}
                 tone="orange"
               />
@@ -954,29 +976,29 @@ export default function AdminDashboardPage() {
               />
 
               <MiniSummaryCard
-                title="ว่างวันนี้"
-                value={todaySummary.totalAvailable}
-                detail="หลังหักล็อก + Gorilla + Rhino"
+                title="ว่างรวม"
+                value={dashboardSummary.totalAvailable}
+                detail={`อิง ${dashboardSummaryLabel} หลังหักล็อก + Gorilla + Rhino`}
                 green
               />
 
               <MiniSummaryCard
-                title="จองใน Gorilla วันนี้"
-                value={todaySummary.totalLocalCustomerBooked}
-                detail="นับจากรายการจองฝั่ง Gorilla"
+                title="จองใน Gorilla"
+                value={dashboardSummary.totalLocalCustomerBooked}
+                detail={`อิง ${dashboardSummaryLabel}`}
               />
 
               <MiniSummaryCard
-                title="จองจาก Rhino วันนี้"
-                value={todaySummary.totalCentralRhinoBooked}
-                detail="ดึงจาก /api/rooms"
+                title="จองจาก Rhino"
+                value={dashboardSummary.totalCentralRhinoBooked}
+                detail={`อิง ${dashboardSummaryLabel} จาก /api/rooms`}
                 orange
               />
 
               <MiniSummaryCard
                 title="ล็อกไว้"
-                value={todaySummary.totalReserved}
-                detail="reservedRooms"
+                value={dashboardSummary.totalReserved}
+                detail={`อิง ${dashboardSummaryLabel}`}
                 red
               />
             </section>
@@ -1501,7 +1523,7 @@ function CalendarDayModal({
 
                   {roomDay.bookings.length === 0 ? (
                     <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-sm font-black text-slate-500 ring-1 ring-white">
-                      ไม่มีลูกค้าจองจาก Gorilla ในห้องประเภทนี้วันนี้
+                      ไม่มีลูกค้าจองจาก Gorilla ในห้องประเภทนี้ของวันที่เลือก
                     </div>
                   ) : (
                     <div className="mt-4 grid gap-3">

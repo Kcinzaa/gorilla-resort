@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
@@ -38,9 +38,24 @@ function getTodayStart() {
   return date;
 }
 
-function getTomorrowStart() {
-  const date = getTodayStart();
-  date.setDate(date.getDate() + 1);
+function getDateStart(dateValue?: string | null) {
+  if (!dateValue) return getTodayStart();
+
+  const [year, month, day] = dateValue.split("-").map(Number);
+
+  if (!year || !month || !day) return getTodayStart();
+
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+
+  if (Number.isNaN(date.getTime())) return getTodayStart();
+
+  return date;
+}
+
+function addDays(dateValue: Date, days: number) {
+  const date = new Date(dateValue);
+  date.setDate(date.getDate() + days);
   return date;
 }
 
@@ -152,9 +167,12 @@ async function loadRevenue() {
   }
 }
 
-async function getCentralRhinoBookedTodayByRoom(roomTypes: RoomTypeForDashboard[]) {
-  const checkIn = getTodayStart();
-  const checkOut = getTomorrowStart();
+async function getCentralRhinoBookedTodayByRoom(
+  roomTypes: RoomTypeForDashboard[],
+  targetDate: Date,
+) {
+  const checkIn = targetDate;
+  const checkOut = addDays(targetDate, 1);
 
   const rows = await Promise.all(
     roomTypes.map(async (room) => {
@@ -189,10 +207,11 @@ async function getCentralRhinoBookedTodayByRoom(roomTypes: RoomTypeForDashboard[
   return rows;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
 
+    const targetDate = getDateStart(request.nextUrl.searchParams.get("date"));
     const roomTypes = await loadRoomTypes();
 
     const [
@@ -235,7 +254,7 @@ export async function GET() {
 
       loadLatestBookings(),
 
-      getCentralRhinoBookedTodayByRoom(roomTypes),
+      getCentralRhinoBookedTodayByRoom(roomTypes, targetDate),
     ]);
 
     const totalRoomTypes = roomTypes.length;
@@ -288,6 +307,7 @@ export async function GET() {
             totalPhysicalRooms,
             reservedRooms,
             centralRhinoBookedToday,
+            dashboardDate: targetDate.toISOString().slice(0, 10),
             totalHeldRoomsToday,
             availablePhysicalRoomsToday,
 
