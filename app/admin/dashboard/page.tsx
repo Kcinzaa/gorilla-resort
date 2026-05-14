@@ -29,7 +29,7 @@ type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "REJECTED";
 
 type BookingItem = {
-  id: number;
+  id: number | string;
   bookingCode?: string | null;
   lineUserId?: string;
   displayName?: string | null;
@@ -51,6 +51,7 @@ type BookingItem = {
   paymentSlipUrl?: string | null;
   paymentReference?: string | null;
   paidAt?: string | null;
+  source?: "gorilla" | "rhino";
 
   roomType?: {
     id: number;
@@ -238,11 +239,15 @@ export default function AdminDashboardPage() {
   const [selectedCalendarDay, setSelectedCalendarDay] =
     useState<CalendarDaySummary | null>(null);
 
-  const knownBookingIdsRef = useRef<Set<number>>(new Set());
+  const knownBookingIdsRef = useRef<Set<string>>(new Set());
   const hasLoadedBookingsRef = useRef(false);
 
   const pendingBookings = useMemo(() => {
     return bookings.filter((booking) => booking.status === "PENDING");
+  }, [bookings]);
+
+  const rhinoBookings = useMemo(() => {
+    return bookings.filter((booking) => booking.source === "rhino");
   }, [bookings]);
 
   const confirmedBookings = useMemo(() => {
@@ -347,10 +352,13 @@ export default function AdminDashboardPage() {
             booking.roomType?.id === room.id && isDateInBooking(date, booking),
         );
 
-        const localBookedFromBookings = roomBookings.reduce(
-          (sum, booking) => sum + Math.max(Number(booking.roomCount || 1), 1),
-          0,
-        );
+        const localBookedFromBookings = roomBookings
+          .filter((booking) => booking.source !== "rhino")
+          .reduce(
+            (sum, booking) =>
+              sum + Math.max(Number(booking.roomCount || 1), 1),
+            0,
+          );
 
         const apiRoom = dayAvailability[room.id];
 
@@ -365,8 +373,17 @@ export default function AdminDashboardPage() {
           apiRoom?.localBookedRooms ?? localBookedFromBookings,
         );
 
-        const centralRhinoBookedCount = Number(
-          apiRoom?.centralRhinoBookedRooms ?? 0,
+        const rhinoBookedFromBookings = roomBookings
+          .filter((booking) => booking.source === "rhino")
+          .reduce(
+            (sum, booking) =>
+              sum + Math.max(Number(booking.roomCount || 1), 1),
+            0,
+          );
+
+        const centralRhinoBookedCount = Math.max(
+          Number(apiRoom?.centralRhinoBookedRooms ?? 0),
+          rhinoBookedFromBookings,
         );
 
         const realBookedCount = Number(
@@ -374,8 +391,9 @@ export default function AdminDashboardPage() {
             localBookedCount + centralRhinoBookedCount,
         );
 
-        const bookedCount = Number(
-          apiRoom?.bookedRooms ?? reservedRooms + realBookedCount,
+        const bookedCount = Math.max(
+          Number(apiRoom?.bookedRooms ?? 0),
+          reservedRooms + realBookedCount,
         );
 
         const availableCount = Math.max(
@@ -696,11 +714,11 @@ export default function AdminDashboardPage() {
     const previousIds = knownBookingIdsRef.current;
 
     const newBookings = nextBookings.filter(
-      (booking) => !previousIds.has(booking.id),
+      (booking) => !previousIds.has(String(booking.id)),
     );
 
     knownBookingIdsRef.current = new Set(
-      nextBookings.map((booking) => booking.id),
+      nextBookings.map((booking) => String(booking.id)),
     );
 
     setBookings(nextBookings);
@@ -742,7 +760,7 @@ export default function AdminDashboardPage() {
        * ให้ fallback ไป /api/rooms เพื่อไม่ให้ห้องจริงทั้งหมดเป็น 0
        */
       const [bookingResult, roomResult] = await Promise.all([
-        fetchJsonWithFallback(["/api/admin/bookings"]),
+        fetchJsonWithFallback(["/api/admin/bookings?includeRhino=1"]),
         fetchJsonWithFallback(["/api/admin/rooms", "/api/rooms"]),
       ]);
 
@@ -918,7 +936,14 @@ export default function AdminDashboardPage() {
 
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
-                  href={`/admin/bookings/${newBookingNotice.id}`}
+                  href={
+                    newBookingNotice.source === "rhino"
+                      ? "https://rhino-camp.vercel.app/admin/login"
+                      : `/admin/bookings/${newBookingNotice.id}`
+                  }
+                  target={
+                    newBookingNotice.source === "rhino" ? "_blank" : undefined
+                  }
                   className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
                 >
                   เปิดดูรายการ
@@ -955,7 +980,7 @@ export default function AdminDashboardPage() {
 
               <DashboardStatCard
                 title="จองจาก Rhino"
-                value={dashboardSummary.totalCentralRhinoBooked}
+                value={rhinoBookings.length}
                 icon={<Hotel size={28} className="text-orange-600" />}
                 tone="orange"
               />
@@ -1538,7 +1563,14 @@ function CalendarDayModal({
                         return (
                           <Link
                             key={booking.id}
-                            href={`/admin/bookings/${booking.id}`}
+                            href={
+                              booking.source === "rhino"
+                                ? "https://rhino-camp.vercel.app/admin/login"
+                                : `/admin/bookings/${booking.id}`
+                            }
+                            target={
+                              booking.source === "rhino" ? "_blank" : undefined
+                            }
                             className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md"
                           >
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
