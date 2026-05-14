@@ -227,6 +227,7 @@ export async function GET(request: Request) {
 
     const checkInParam = searchParams.get("checkIn") || "";
     const checkOutParam = searchParams.get("checkOut") || "";
+    const adminOwnOnly = searchParams.get("adminOwnOnly") === "1";
 
     const rooms = await loadActiveRooms();
 
@@ -316,18 +317,20 @@ export async function GET(request: Request) {
 
         let centralRhinoBookedRooms = 0;
 
-        try {
-          centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
-            gorillaRoomTypeId: room.id,
-            checkIn,
-            checkOut,
-          });
-        } catch (error) {
-          console.error("GET_PUBLIC_ROOMS_CENTRAL_COUNT_ERROR", {
-            roomTypeId: room.id,
-            roomName: room.name,
-            error,
-          });
+        if (!adminOwnOnly) {
+          try {
+            centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+              gorillaRoomTypeId: room.id,
+              checkIn,
+              checkOut,
+            });
+          } catch (error) {
+            console.error("GET_PUBLIC_ROOMS_CENTRAL_COUNT_ERROR", {
+              roomTypeId: room.id,
+              roomName: room.name,
+              error,
+            });
+          }
         }
 
         /**

@@ -247,9 +247,6 @@ export async function GET(request: Request) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const includeRhino = searchParams.get("includeRhino") === "1";
-
     let bookings: Awaited<ReturnType<typeof loadAdminBookings>> | [] = [];
     try {
       bookings = await loadAdminBookings();
@@ -258,8 +255,7 @@ export async function GET(request: Request) {
       bookings = [];
     }
 
-    const rhinoBookings = includeRhino ? await loadRhinoAdminBookings() : [];
-    const combinedBookings = [...bookings, ...rhinoBookings].sort((a, b) => {
+    const combinedBookings = [...bookings].sort((a, b) => {
       const aTime = new Date(a.createdAt || 0).getTime();
       const bTime = new Date(b.createdAt || 0).getTime();
 
@@ -271,7 +267,7 @@ export async function GET(request: Request) {
       data: combinedBookings,
       meta: {
         gorillaCount: bookings.length,
-        rhinoCount: rhinoBookings.length,
+        rhinoCount: 0,
       },
     });
   } catch (error) {

@@ -259,7 +259,6 @@ export async function GET(request: NextRequest) {
       totalUsers,
       revenueResult,
       latestBookings,
-      centralRhinoBookedTodayByRoom,
     ] = await Promise.all([
       safeNumber(() => prisma.booking.count(), "TOTAL_BOOKINGS"),
 
@@ -294,7 +293,6 @@ export async function GET(request: NextRequest) {
 
       safeLatestBookings(),
 
-      getCentralRhinoBookedTodayByRoom(roomTypes, targetDate),
     ]);
 
     const totalRoomTypes = roomTypes.length;
@@ -311,12 +309,9 @@ export async function GET(request: NextRequest) {
       return sum + Number(room.reservedRooms || 0);
     }, 0);
 
-    const centralRhinoBookedToday = centralRhinoBookedTodayByRoom.reduce(
-      (sum, room) => sum + Number(room.centralRhinoBookedRooms || 0),
-      0,
-    );
+    const centralRhinoBookedToday = 0;
 
-    const totalHeldRoomsToday = reservedRooms + centralRhinoBookedToday;
+    const totalHeldRoomsToday = reservedRooms;
 
     const availablePhysicalRoomsToday = Math.max(
       totalPhysicalRooms - totalHeldRoomsToday,
@@ -359,7 +354,7 @@ export async function GET(request: NextRequest) {
            * รายละเอียดว่าจองจาก Rhino มากระทบห้องไหนบ้างของวันนี้
            * เช่น Standard, King Single, King Double
            */
-          centralRhinoBookedTodayByRoom,
+          centralRhinoBookedTodayByRoom: [],
 
           latestBookings,
         },

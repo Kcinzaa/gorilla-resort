@@ -624,7 +624,7 @@ export default function AdminDashboardPage() {
              * endpoint คือ /api/rooms ไม่ใช่ /api/rooms/availability
              */
             const response = await fetch(
-              `/api/rooms?checkIn=${encodeURIComponent(
+              `/api/rooms?adminOwnOnly=1&checkIn=${encodeURIComponent(
                 checkIn,
               )}&checkOut=${encodeURIComponent(checkOut)}`,
               {
@@ -700,7 +700,7 @@ export default function AdminDashboardPage() {
        * ให้ fallback ไป /api/rooms เพื่อไม่ให้ห้องจริงทั้งหมดเป็น 0
        */
       const [bookingResult, roomResult] = await Promise.all([
-        fetchJsonWithFallback(["/api/admin/bookings?includeRhino=1"]),
+        fetchJsonWithFallback(["/api/admin/bookings"]),
         fetchJsonWithFallback(["/api/admin/rooms", "/api/rooms"]),
       ]);
 
@@ -806,7 +806,7 @@ export default function AdminDashboardPage() {
             </h2>
 
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-              ระบบกำลังดึงรายการจอง ห้องพัก และจำนวนห้องว่างจาก Gorilla + Rhino
+              ระบบกำลังดึงรายการจอง ห้องพัก และจำนวนห้องว่างของ Gorilla
             </p>
           </section>
         )}
@@ -862,9 +862,9 @@ export default function AdminDashboardPage() {
               />
 
               <DashboardStatCard
-                title="จองจาก Rhino"
-                value={rhinoBookings.length}
-                icon={<Hotel size={28} className="text-orange-600" />}
+                title="รอตรวจสลิป"
+                value={paymentPendingBookings.length}
+                icon={<ReceiptText size={28} className="text-orange-600" />}
                 tone="orange"
               />
 
@@ -886,7 +886,7 @@ export default function AdminDashboardPage() {
               <MiniSummaryCard
                 title="ว่างรวม"
                 value={dashboardSummary.totalAvailable}
-                detail={`อิง ${dashboardSummaryLabel} หลังหักล็อก + Gorilla + Rhino`}
+                detail={`อิง ${dashboardSummaryLabel} หลังหักล็อก + Gorilla`}
                 green
               />
 
@@ -897,8 +897,8 @@ export default function AdminDashboardPage() {
               />
 
               <MiniSummaryCard
-                title="จองจาก Rhino"
-                value={dashboardSummary.totalCentralRhinoBooked}
+                title="รอตรวจสอบ"
+                value={pendingBookings.length}
                 detail={`อิง ${dashboardSummaryLabel} จาก /api/rooms`}
                 orange
               />
@@ -1052,8 +1052,8 @@ export default function AdminDashboardPage() {
                 />
                 <CalendarLegendCard
                   tone="orange"
-                  label="Rhino"
-                  detail="จองจากเว็บ Rhino"
+                  label="รอตรวจ"
+                  detail="รายการที่รอแอดมินตรวจ"
                 />
                 <CalendarLegendCard
                   tone="red"
@@ -1152,8 +1152,8 @@ export default function AdminDashboardPage() {
                             value={day.totalLocalCustomerBooked}
                           />
                           <SmallScheduleMetric
-                            label="Rhino"
-                            value={day.totalCentralRhinoBooked}
+                            label="รอตรวจ"
+                            value={day.totalBooked}
                           />
                           <SmallScheduleMetric
                             label="ล็อก"
@@ -1335,7 +1335,7 @@ function CalendarDayModal({
             </h3>
 
             <p className="mt-2 text-sm font-bold text-slate-500">
-              รายละเอียดห้องว่าง ห้องที่จองจาก Gorilla, Rhino และห้องที่ล็อกไว้
+              รายละเอียดห้องว่าง ห้องที่จองจาก Gorilla และห้องที่ล็อกไว้
             </p>
           </div>
 
@@ -1360,8 +1360,8 @@ function CalendarDayModal({
               value={selectedCalendarDay.totalLocalCustomerBooked}
             />
             <SmallScheduleMetric
-              label="Rhino"
-              value={selectedCalendarDay.totalCentralRhinoBooked}
+              label="รอตรวจ"
+              value={selectedCalendarDay.totalBooked}
             />
             <SmallScheduleMetric
               label="ล็อกไว้"
@@ -1399,8 +1399,7 @@ function CalendarDayModal({
                       <p className="mt-1 text-sm font-bold text-slate-500">
                         ทั้งหมด {roomDay.totalRooms} ห้อง · ว่าง{" "}
                         {roomDay.availableCount} ห้อง · Gorilla จอง{" "}
-                        {roomDay.localBookedCount} ห้อง · Rhino จอง{" "}
-                        {roomDay.centralRhinoBookedCount} ห้อง · ล็อก{" "}
+                        {roomDay.localBookedCount} ห้อง · ล็อก{" "}
                         {roomDay.reservedRooms} ห้อง
                       </p>
                     </div>
@@ -1421,7 +1420,7 @@ function CalendarDayModal({
                     </span>
                   </div>
 
-                  {roomDay.centralRhinoBookedCount > 0 && (
+                  {false && (
                     <div className="mt-4 rounded-2xl bg-orange-100 p-4 text-sm font-black text-orange-700 ring-1 ring-orange-200">
                       มีรายการจองจาก Rhino จำนวน{" "}
                       {roomDay.centralRhinoBookedCount} ห้อง
