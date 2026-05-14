@@ -739,21 +739,28 @@ export default function AdminDashboardPage() {
   }, [calendarMonth]);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen overflow-hidden bg-[#edf4f7] text-slate-950">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -left-24 top-0 h-96 w-96 rounded-full bg-emerald-200/45 blur-3xl" />
+        <div className="absolute right-0 top-32 h-[30rem] w-[30rem] rounded-full bg-sky-200/50 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-orange-100/60 blur-3xl" />
+      </div>
+
       <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
-        <header className="sticky top-3 z-40 mb-5 rounded-[1.5rem] bg-white/95 px-4 py-3 shadow-sm ring-1 ring-slate-200 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
+        <header className="sticky top-3 z-40 mb-5 overflow-hidden rounded-[1.5rem] bg-white/88 px-4 py-3 shadow-[0_18px_60px_rgba(15,23,42,0.10)] ring-1 ring-white/70 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-sky-500 to-orange-400" />
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/15">
                 <ShieldCheck size={25} className="text-white" />
               </div>
 
               <div>
-                <h1 className="text-lg font-black text-slate-950">
-                  Admin Dashboard
+                <h1 className="text-lg font-black leading-tight text-slate-950">
+                  Gorilla Admin
                 </h1>
-                <p className="text-sm text-slate-500">
-                  Gorilla Resort Booking Management
+                <p className="text-sm font-semibold text-slate-500">
+                  Resort operations dashboard
                 </p>
               </div>
             </div>
@@ -761,7 +768,7 @@ export default function AdminDashboardPage() {
             <nav className="flex flex-wrap gap-2">
               <Link
                 href="/admin/dashboard"
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/10 transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <LayoutDashboard size={17} className="text-white" />
                 <span className="text-white">Dashboard</span>
@@ -769,7 +776,7 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/bookings"
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-slate-50"
               >
                 <CalendarCheck size={17} className="text-slate-700" />
                 <span className="text-slate-700">Bookings</span>
@@ -777,7 +784,7 @@ export default function AdminDashboardPage() {
 
               <Link
                 href="/admin/rooms"
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-slate-50"
               >
                 <BedDouble size={17} className="text-slate-700" />
                 <span className="text-slate-700">Rooms</span>
@@ -786,7 +793,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-black text-red-700 ring-1 ring-red-100 transition hover:bg-red-100"
+                className="inline-flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-black text-red-700 ring-1 ring-red-100 transition hover:-translate-y-0.5 hover:bg-red-100"
               >
                 <LogOut size={17} className="text-red-700" />
                 <span className="text-red-700">Logout</span>
@@ -846,6 +853,67 @@ export default function AdminDashboardPage() {
 
         {!loading && !error && (
           <>
+            <section className="mt-5 overflow-hidden rounded-[2rem] bg-slate-950 shadow-[0_22px_70px_rgba(15,23,42,0.18)] ring-1 ring-slate-900 sm:rounded-[2.5rem]">
+              <div className="relative grid gap-6 p-5 text-white sm:p-7 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
+                <div className="pointer-events-none absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-sky-400/10 blur-3xl" />
+
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300 ring-1 ring-white/10">
+                    <Hotel size={16} />
+                    Gorilla Control
+                  </div>
+
+                  <h2 className="mt-5 max-w-3xl text-3xl font-black leading-tight text-white sm:text-5xl">
+                    Resort admin ของ Gorilla แยกดูเฉพาะรายการจองฝั่งนี้
+                  </h2>
+
+                  <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-slate-300">
+                    Dashboard นี้โฟกัสข้อมูล Gorilla โดยตรง: รายการจอง, สลิป,
+                    ห้องว่าง และห้องที่ล็อกไว้ในระบบ Gorilla เท่านั้น
+                  </p>
+                </div>
+
+                <div className="relative grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="rounded-3xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                      Today Focus
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-white">
+                      {dashboardSummary.totalAvailable}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-slate-400">
+                      ห้องว่างวันนี้ใน Gorilla
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                      Need Review
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-orange-300">
+                      {paymentPendingBookings.length + pendingBookings.length}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-slate-400">
+                      รายการที่รอแอดมินจัดการ
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                      Confirmed
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-emerald-300">
+                      {confirmedBookings.length}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-slate-400">
+                      รายการที่ยืนยันแล้ว
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               <DashboardStatCard
                 title="รายการจองทั้งหมด"
@@ -1206,17 +1274,18 @@ function DashboardStatCard({
   const toneClass = getDashboardToneClass(tone);
 
   return (
-    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+    <div className="group relative overflow-hidden rounded-[2rem] bg-white/92 p-5 shadow-[0_18px_55px_rgba(15,23,42,0.08)] ring-1 ring-white/80 backdrop-blur transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200 sm:p-6">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-950 via-emerald-500 to-sky-400 opacity-80" />
       <div
         className={[
-          "flex h-14 w-14 items-center justify-center rounded-2xl ring-1",
+          "flex h-14 w-14 items-center justify-center rounded-2xl ring-1 transition group-hover:scale-105",
           toneClass.icon,
         ].join(" ")}
       >
         {icon}
       </div>
 
-      <p className="mt-5 text-sm font-bold text-slate-500">{title}</p>
+      <p className="mt-5 text-sm font-black text-slate-500">{title}</p>
 
       <p className="mt-2 text-4xl font-black text-slate-950">{value}</p>
 
@@ -1251,7 +1320,7 @@ function MiniSummaryCard({
         : "text-slate-950";
 
   return (
-    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
+    <div className="rounded-[2rem] bg-white/90 p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)] ring-1 ring-white/80">
       <p className="text-sm font-bold text-slate-500">{title}</p>
       <p className={["mt-2 text-4xl font-black", valueClass].join(" ")}>
         {value}

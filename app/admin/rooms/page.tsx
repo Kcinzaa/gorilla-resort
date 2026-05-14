@@ -432,9 +432,14 @@ export default function AdminRoomsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
+    <main className="min-h-screen overflow-hidden bg-[#edf4f7] text-slate-950">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -left-24 top-0 h-96 w-96 rounded-full bg-emerald-200/45 blur-3xl" />
+        <div className="absolute right-0 top-32 h-[30rem] w-[30rem] rounded-full bg-sky-200/50 blur-3xl" />
+      </div>
       <section className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
-        <header className="sticky top-3 z-40 mb-5 rounded-[1.5rem] bg-white/95 px-4 py-3 shadow-sm ring-1 ring-slate-200 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
+        <header className="sticky top-3 z-40 mb-5 overflow-hidden rounded-[1.5rem] bg-white/88 px-4 py-3 shadow-[0_18px_60px_rgba(15,23,42,0.10)] ring-1 ring-white/70 backdrop-blur-xl sm:top-4 sm:rounded-[2rem] sm:px-5 sm:py-4">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-sky-500 to-orange-400" />
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
