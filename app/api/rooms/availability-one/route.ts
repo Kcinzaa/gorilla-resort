@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { prisma } from "@/lib/prisma";
 
 function parseDate(value: string | null) {
@@ -105,7 +106,22 @@ export async function GET(request: Request) {
       Number("reservedRooms" in roomType ? roomType.reservedRooms || 0 : 0),
       totalRooms
     );
-    const heldRooms = bookedRooms + reservedRooms;
+    let centralRhinoBookedRooms = 0;
+
+    try {
+      centralRhinoBookedRooms = await getCentralRhinoBookedRoomCount({
+        gorillaRoomTypeId: roomTypeId,
+        checkIn,
+        checkOut,
+      });
+    } catch (error) {
+      console.error("GET_ROOM_AVAILABILITY_ONE_CENTRAL_COUNT_ERROR:", {
+        roomTypeId,
+        error,
+      });
+    }
+
+    const heldRooms = bookedRooms + reservedRooms + centralRhinoBookedRooms;
     const availableRooms = Math.max(totalRooms - heldRooms, 0);
 
     return NextResponse.json({
@@ -116,7 +132,9 @@ export async function GET(request: Request) {
         checkOut: checkOutParam,
         totalRooms,
         reservedRooms,
-        realBookedRooms: bookedRooms,
+        realBookedRooms: bookedRooms + centralRhinoBookedRooms,
+        localBookedRooms: bookedRooms,
+        centralRhinoBookedRooms,
         bookedRooms: heldRooms,
         availableRooms,
         isAvailable: availableRooms > 0,
@@ -124,6 +142,26 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("GET ROOM AVAILABILITY ONE ERROR:", error);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        roomTypeId: Number(new URL(request.url).searchParams.get("roomTypeId") || 0),
+        totalRooms: 0,
+        reservedRooms: 0,
+        realBookedRooms: 0,
+        localBookedRooms: 0,
+        centralRhinoBookedRooms: 0,
+        bookedRooms: 0,
+        availableRooms: 0,
+        isAvailable: false,
+      },
+      warning: "ตรวจสอบห้องว่างไม่สำเร็จ ระบบจึงปิดการจองห้องนี้ชั่วคราว",
+      error:
+        process.env.NODE_ENV === "development"
+          ? getErrorMessage(error)
+          : undefined,
+    });
 
     return NextResponse.json(
       {
