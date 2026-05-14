@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -237,11 +237,6 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [newBookingNotice, setNewBookingNotice] = useState<BookingItem | null>(
-    null
-  );
-  const knownBookingIdsRef = useRef<Set<number>>(new Set());
-  const hasLoadedBookingsRef = useRef(false);
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | BookingStatus>(
     "ALL"
@@ -301,53 +296,11 @@ export default function AdminBookingsPage() {
     });
   }, [bookings, keyword, statusFilter, paymentFilter]);
 
-  function playNewBookingSound() {
-    try {
-      const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
-      const audioContext = new AudioContextClass();
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-      oscillator.frequency.setValueAtTime(660, audioContext.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.001, audioContext.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.32);
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.34);
-    } catch {
-      // Some browsers block audio until the admin interacts with the page.
-    }
-  }
-
-  function applyBookingsUpdate(nextBookings: BookingItem[], notify: boolean) {
-    const previousIds = knownBookingIdsRef.current;
-    const newBookings = nextBookings.filter(
-      (booking) => !previousIds.has(booking.id)
-    );
-
-    knownBookingIdsRef.current = new Set(nextBookings.map((booking) => booking.id));
+  function applyBookingsUpdate(nextBookings: BookingItem[]) {
     setBookings(nextBookings);
-
-    if (notify && hasLoadedBookingsRef.current && newBookings.length > 0) {
-      const newestBooking = [...newBookings].sort((a, b) => {
-        const aTime = new Date(a.createdAt || "").getTime();
-        const bTime = new Date(b.createdAt || "").getTime();
-        return bTime - aTime;
-      })[0];
-
-      setNewBookingNotice(newestBooking);
-      playNewBookingSound();
-    }
-
-    hasLoadedBookingsRef.current = true;
   }
 
-  async function fetchBookings(options?: { silent?: boolean; notify?: boolean }) {
+  async function fetchBookings(options?: { silent?: boolean }) {
     try {
       if (!options?.silent) setLoading(true);
       setError("");
@@ -372,7 +325,7 @@ export default function AdminBookingsPage() {
         return;
       }
 
-      applyBookingsUpdate(toArray<BookingItem>(result), Boolean(options?.notify));
+      applyBookingsUpdate(toArray<BookingItem>(result));
     } catch (err) {
       console.warn(err);
       if (!options?.silent) {
@@ -438,12 +391,6 @@ export default function AdminBookingsPage() {
 
   useEffect(() => {
     fetchBookings();
-
-    const intervalId = window.setInterval(() => {
-      fetchBookings({ silent: true, notify: true });
-    }, 15000);
-
-    return () => window.clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -605,44 +552,6 @@ export default function AdminBookingsPage() {
                   เกิดข้อผิดพลาด
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-red-600">{error}</p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {newBookingNotice && (
-          <section className="mt-5 rounded-[2rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm sm:rounded-[2.5rem]">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                  <CalendarCheck size={28} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-emerald-800">
-                    มีรายการจองใหม่เข้ามา
-                  </h2>
-                  <p className="mt-1 text-sm font-bold text-emerald-700">
-                    {newBookingNotice.displayName || "ลูกค้า"} จอง{" "}
-                    {newBookingNotice.roomType?.name || "ห้องพัก"}{" "}
-                    {Math.max(Number(newBookingNotice.roomCount || 1), 1)} ห้อง
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Link
-                  href={`/admin/bookings/${newBookingNotice.id}`}
-                  className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700"
-                >
-                  เปิดดูรายการ
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setNewBookingNotice(null)}
-                  className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-700 ring-1 ring-emerald-100 transition hover:bg-emerald-100"
-                >
-                  ปิดแจ้งเตือน
-                </button>
               </div>
             </div>
           </section>
