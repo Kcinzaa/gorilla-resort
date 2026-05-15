@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   BedDouble,
+  CalendarDays,
   CheckCircle2,
   Edit3,
   Eye,
@@ -33,6 +34,12 @@ type RoomItem = {
   imageUrl?: string | null;
   isActive?: boolean;
   createdAt?: string;
+  // live availability fields (populated when date range is queried)
+  localBookedRooms?: number;
+  centralRhinoBookedRooms?: number;
+  bookedRooms?: number;
+  availableRooms?: number;
+  isAvailable?: boolean;
   updatedAt?: string;
 };
 
@@ -90,6 +97,13 @@ export default function AdminRoomsPage() {
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState<RoomForm>(emptyForm);
 
+  // Live availability check
+  const [availCheckIn, setAvailCheckIn] = useState("");
+  const [availCheckOut, setAvailCheckOut] = useState("");
+  const [availLoading, setAvailLoading] = useState(false);
+  const [availError, setAvailError] = useState("");
+  const hasLiveAvail = rooms.length > 0 && rooms[0].availableRooms !== undefined;
+
   const activeRooms = useMemo(() => rooms.filter((r) => r.isActive !== false), [rooms]);
   const inactiveRooms = useMemo(() => rooms.filter((r) => r.isActive === false), [rooms]);
   const totalRoomCount = useMemo(() => activeRooms.reduce((sum, r) => sum + (r.totalRooms ?? 1), 0), [activeRooms]);
@@ -139,6 +153,33 @@ export default function AdminRoomsPage() {
       setError("เกิดข้อผิดพลาดในการโหลดรายการห้องพัก");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function checkLiveAvailability() {
+    if (!availCheckIn || !availCheckOut) {
+      setAvailError("กรุณาระบุวันที่เข้าพักและวันที่ออก");
+      return;
+    }
+    if (availCheckOut <= availCheckIn) {
+      setAvailError("วันที่ออกต้องมากกว่าวันที่เข้าพัก");
+      return;
+    }
+    try {
+      setAvailLoading(true);
+      setAvailError("");
+      const params = new URLSearchParams({ checkIn: availCheckIn, checkOut: availCheckOut });
+      const response = await fetch(`/api/admin/rooms?${params}`, { cache: "no-store", credentials: "include" });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        setAvailError(result.message || "ไม่สามารถเช็กห้องว่างได้");
+        return;
+      }
+      setRooms(toArray<RoomItem>(result));
+    } catch {
+      setAvailError("เกิดข้อผิดพลาดในการเช็กห้องว่าง");
+    } finally {
+      setAvailLoading(false);
     }
   }
 
@@ -344,8 +385,57 @@ export default function AdminRoomsPage() {
         </button>
       </div>
 
+      {/* Live Availability Check */}
+      <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="border-b border-slate-100 bg-emerald-50 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={18} className="text-emerald-600" />
+            <p className="text-sm font-black text-emerald-800">เช็กห้องว่าง (รวม Rhino)</p>
+            {hasLiveAvail && (
+              <span className="ml-auto rounded-full bg-emerald-600 px-3 py-0.5 text-xs font-black text-white">
+                แสดงข้อมูลจริง ✓
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-[1fr_1fr_auto]">
+          <div className="relative">
+            <CalendarDays size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="date"
+              value={availCheckIn}
+              onChange={(e) => setAvailCheckIn(e.target.value)}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              placeholder="วันเข้าพัก"
+            />
+          </div>
+          <div className="relative">
+            <CalendarDays size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="date"
+              value={availCheckOut}
+              onChange={(e) => setAvailCheckOut(e.target.value)}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              placeholder="วันออก"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={checkLiveAvailability}
+            disabled={availLoading}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {availLoading ? <Loader2 size={15} className="animate-spin" /> : <RefreshCcw size={15} />}
+            เช็กห้องว่าง
+          </button>
+        </div>
+        {availError && (
+          <p className="px-4 pb-3 text-sm font-bold text-red-600">{availError}</p>
+        )}
+      </div>
+
       {/* Filters */}
-      <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
           <div className="relative">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -491,6 +581,24 @@ export default function AdminRoomsPage() {
                   </div>
                 </div>
 
+                {/* Live availability (shown only when date range is selected) */}
+                {hasLiveAvail && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-slate-100 p-2.5">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">จอง Gorilla</p>
+                      <p className="mt-1 font-black text-slate-800">{room.localBookedRooms ?? 0} ห้อง</p>
+                    </div>
+                    <div className="rounded-xl bg-blue-50 p-2.5 ring-1 ring-blue-100">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-blue-500">จอง Rhino</p>
+                      <p className="mt-1 font-black text-blue-800">{room.centralRhinoBookedRooms ?? 0} ห้อง</p>
+                    </div>
+                    <div className={["rounded-xl p-2.5 ring-1", (room.availableRooms ?? 0) > 0 ? "bg-emerald-50 ring-emerald-100" : "bg-red-50 ring-red-100"].join(" ")}>
+                      <p className={["text-[10px] font-black uppercase tracking-wide", (room.availableRooms ?? 0) > 0 ? "text-emerald-600" : "text-red-600"].join(" ")}>ว่างจริง</p>
+                      <p className={["mt-1 font-black", (room.availableRooms ?? 0) > 0 ? "text-emerald-800" : "text-red-700"].join(" ")}>{room.availableRooms ?? 0} ห้อง</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Action buttons */}
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
@@ -584,7 +692,7 @@ export default function AdminRoomsPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                   placeholder="รายละเอียด เช่น ห้องพักวิวสวน สำหรับ 2 ท่าน"
                   rows={3}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 e transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
                 />
               </div>
 

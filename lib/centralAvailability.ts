@@ -200,6 +200,7 @@ export async function getCentralRhinoBookedRoomCount({
       .select(
         "id, check_in, check_out, booking_status, payment_status, status, cart_data",
       )
+      .not("booking_status", "in", '("CANCELLED","CANCELED","EXPIRED")')
       .lt("check_in", checkOutText)
       .gt("check_out", checkInText);
 

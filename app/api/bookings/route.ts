@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
+import { triggerSheetsSync } from "@/lib/googleSheetsSync";
 import { prisma } from "@/lib/prisma";
 import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
 
@@ -624,6 +625,8 @@ export async function POST(request: Request) {
       };
     }
 
+    triggerSheetsSync("new-booking");
+
     return NextResponse.json({
       success: true,
       message: "ส่งคำขอจองและแจ้งชำระเงินสำเร็จ",
@@ -749,6 +752,8 @@ export async function PATCH(request: Request) {
         roomType: true,
       },
     });
+
+    triggerSheetsSync("upload-slip");
 
     return NextResponse.json({
       success: true,

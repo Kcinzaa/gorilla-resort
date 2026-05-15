@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
 import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
+import { triggerSheetsSync } from "@/lib/googleSheetsSync";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/auth";
 
@@ -391,6 +392,8 @@ export async function PATCH(request: Request) {
         message: syncError instanceof Error ? syncError.message : "Unknown sync error",
       };
     }
+
+    triggerSheetsSync("admin-update-booking");
 
     return NextResponse.json({
       success: true,

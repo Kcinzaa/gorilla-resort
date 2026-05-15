@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
+  ExternalLink,
   Hotel,
   Loader2,
   Phone,
@@ -19,6 +20,9 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
+
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE";
+const GOOGLE_APPS_SCRIPT_WEBHOOK = process.env.NEXT_PUBLIC_GOOGLE_SHEET_URL || GOOGLE_SHEET_URL;
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 type PaymentStatus = "UNPAID" | "PENDING" | "PAID" | "REJECTED";
@@ -133,6 +137,8 @@ export default function AdminBookingsPage() {
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | BookingStatus>("ALL");
   const [paymentFilter, setPaymentFilter] = useState<"ALL" | PaymentStatus>("ALL");
+  const [syncingSheets, setSyncingSheets] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
   const pendingCount = useMemo(() => bookings.filter((b) => b.status === "PENDING").length, [bookings]);
   const confirmedCount = useMemo(() => bookings.filter((b) => b.status === "CONFIRMED").length, [bookings]);
@@ -217,6 +223,29 @@ export default function AdminBookingsPage() {
     }
   }
 
+  async function syncToSheets() {
+    try {
+      setSyncingSheets(true);
+      setSyncMessage("");
+      const res = await fetch("/api/admin/sync-google-sheets", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+      const result = await res.json();
+      if (result.ok) {
+        setSyncMessage(`✓ ซิงก์สำเร็จ ${result.count ?? ""} รายการ`);
+      } else {
+        setSyncMessage(`✗ ${result.message || "ซิงก์ไม่สำเร็จ"}`);
+      }
+    } catch {
+      setSyncMessage("✗ เกิดข้อผิดพลาด");
+    } finally {
+      setSyncingSheets(false);
+      setTimeout(() => setSyncMessage(""), 5000);
+    }
+  }
+
   useEffect(() => {
     fetchBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -224,6 +253,39 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {/* Page header */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-black text-slate-900">รายการจอง</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          {syncMessage && (
+            <span className={`text-sm font-bold ${syncMessage.startsWith("✓") ? "text-emerald-600" : "text-red-500"}`}>
+              {syncMessage}
+            </span>
+          )}
+          <button
+            onClick={syncToSheets}
+            disabled={syncingSheets}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60 active:scale-95"
+          >
+            {syncingSheets ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <RefreshCcw size={16} />
+            )}
+            {syncingSheets ? "กำลังซิงก์..." : "Sync Google Sheet"}
+          </button>
+          <a
+            href={GOOGLE_SHEET_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+          >
+            <ExternalLink size={16} />
+            เปิด Sheet
+          </a>
+        </div>
+      </div>
+
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
