@@ -21,7 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE";
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1MztrFvab7qaRd4jB3jaLAWGhlWd8s6Bhgew1xYQqdkY/edit?usp=sharing";
 const GOOGLE_APPS_SCRIPT_WEBHOOK = process.env.NEXT_PUBLIC_GOOGLE_SHEET_URL || GOOGLE_SHEET_URL;
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
