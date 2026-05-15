@@ -223,9 +223,9 @@ export default function AdminBookingsPage() {
     }
   }
 
-  async function syncToSheets() {
+  async function syncToSheets(options?: { silent?: boolean }) {
     try {
-      setSyncingSheets(true);
+      if (!options?.silent) setSyncingSheets(true);
       setSyncMessage("");
       const res = await fetch("/api/admin/sync-google-sheets", {
         method: "POST",
@@ -233,21 +233,35 @@ export default function AdminBookingsPage() {
         cache: "no-store",
       });
       const result = await res.json();
-      if (result.ok) {
-        setSyncMessage(`✓ ซิงก์สำเร็จ ${result.count ?? ""} รายการ`);
-      } else {
-        setSyncMessage(`✗ ${result.message || "ซิงก์ไม่สำเร็จ"}`);
+      if (!options?.silent) {
+        if (result.ok) {
+          setSyncMessage(`✓ ซิงก์สำเร็จ ${result.count ?? ""} รายการ`);
+        } else {
+          setSyncMessage(`✗ ${result.message || "ซิงก์ไม่สำเร็จ"}`);
+        }
       }
     } catch {
-      setSyncMessage("✗ เกิดข้อผิดพลาด");
+      if (!options?.silent) setSyncMessage("✗ เกิดข้อผิดพลาด");
     } finally {
-      setSyncingSheets(false);
-      setTimeout(() => setSyncMessage(""), 5000);
+      if (!options?.silent) {
+        setSyncingSheets(false);
+        setTimeout(() => setSyncMessage(""), 5000);
+      }
     }
   }
 
   useEffect(() => {
     fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-sync Google Sheets ทุก 60 วินาที (silent — ไม่แสดง UI)
+  useEffect(() => {
+    syncToSheets({ silent: true });
+    const timer = window.setInterval(() => {
+      syncToSheets({ silent: true });
+    }, 60000);
+    return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
