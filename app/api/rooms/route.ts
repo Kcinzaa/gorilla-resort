@@ -35,7 +35,7 @@ const FALLBACK_GORILLA_ROOMS: RoomTypeRow[] = [
     capacity: 2,
     totalRooms: 16,
     reservedRooms: 6,
-    imageUrl: "/images/S__37019660_0.jpg",
+    imageUrl: null,
     isActive: true,
   },
   {
@@ -46,7 +46,7 @@ const FALLBACK_GORILLA_ROOMS: RoomTypeRow[] = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/AA6292A7-4B4B-452D-8C8A-B20791839228.jpg",
+    imageUrl: null,
     isActive: true,
   },
   {
@@ -57,7 +57,7 @@ const FALLBACK_GORILLA_ROOMS: RoomTypeRow[] = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/DB5B7FFF-8EE4-448E-B5B8-7CED9A9E3E70.jpg",
+    imageUrl: null,
     isActive: true,
   },
 ];

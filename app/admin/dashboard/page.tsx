@@ -419,7 +419,7 @@ export default function AdminDashboardPage() {
           const checkOut = formatInputDate(addDays(date, 1));
           try {
             const response = await fetch(
-              `/api/rooms?adminOwnOnly=1&checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`,
+              `/api/rooms?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`,
               { cache: "no-store", credentials: "include" },
             );
             const result = await response.json().catch(() => ({}));

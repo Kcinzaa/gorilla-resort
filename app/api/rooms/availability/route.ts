@@ -32,7 +32,7 @@ const FALLBACK_GORILLA_ROOMS: AvailabilityRoom[] = [
     capacity: 2,
     totalRooms: 16,
     reservedRooms: 6,
-    imageUrl: "/images/room/standard.jpg",
+    imageUrl: null,
     isActive: true,
   },
   {
@@ -43,7 +43,7 @@ const FALLBACK_GORILLA_ROOMS: AvailabilityRoom[] = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/room/king-double.jpg",
+    imageUrl: null,
     isActive: true,
   },
   {
@@ -54,7 +54,7 @@ const FALLBACK_GORILLA_ROOMS: AvailabilityRoom[] = [
     capacity: 2,
     totalRooms: 2,
     reservedRooms: 0,
-    imageUrl: "/images/room/king-single.jpg",
+    imageUrl: null,
     isActive: true,
   },
 ];
