@@ -277,7 +277,7 @@ export default function AdminBookingsPage() {
             </span>
           )}
           <button
-            onClick={syncToSheets}
+            onClick={() => syncToSheets()}
             disabled={syncingSheets}
             className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60 active:scale-95"
           >
