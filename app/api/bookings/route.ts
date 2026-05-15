@@ -185,11 +185,8 @@ export async function GET(request: Request) {
     };
 
     const localBookings = await loadGorillaBookingsSafely(where);
-    const rhinoBookings = lineUserId
-      ? await loadRhinoCentralBookingsByLineUser(lineUserId)
-      : [];
 
-    const combined = [...localBookings, ...rhinoBookings].sort((a, b) => {
+    const sorted = [...localBookings].sort((a, b) => {
       const aTime = new Date(a.createdAt || 0).getTime();
       const bTime = new Date(b.createdAt || 0).getTime();
       return bTime - aTime;
@@ -197,10 +194,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: combined,
+      data: sorted,
       meta: {
         gorillaCount: localBookings.length,
-        rhinoCount: rhinoBookings.length,
       },
     });
   } catch (error) {

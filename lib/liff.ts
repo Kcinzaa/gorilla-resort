@@ -60,7 +60,7 @@ export async function getLiffProfile(): Promise<LineProfile> {
 
     if (!liff.isLoggedIn()) {
       liff.login({
-        redirectUri: `${window.location.origin}/rooms`,
+        redirectUri: window.location.href,
       });
 
       if (!canUseDevProfile()) {
