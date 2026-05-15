@@ -202,16 +202,14 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET BOOKINGS FATAL:", error);
 
-    // Never let a load error block the user — return empty with a warning so
-    // the page renders cleanly. Their actual data is still in the database.
+    const errMsg = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
       {
-        success: true,
-        data: [],
-        warning: "ไม่สามารถโหลดรายการจองได้ในตอนนี้ กรุณาลองโหลดใหม่อีกครั้ง",
-        error: error instanceof Error ? error.message : String(error),
+        success: false,
+        message: `ไม่สามารถโหลดรายการจองได้: ${errMsg}`,
       },
-      { status: 200 },
+      { status: 500 },
     );
   }
 }
@@ -271,41 +269,36 @@ async function loadGorillaBookingsSafely(where: {
       console.error("LOAD_GORILLA_BOOKINGS_PRIMARY_ERROR:", firstError);
     }
 
-    try {
-      const rows = await prisma.booking.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          bookingCode: true,
-          lineUserId: true,
-          displayName: true,
-          pictureUrl: true,
-          phone: true,
-          note: true,
-          roomTypeId: true,
-          checkIn: true,
-          checkOut: true,
-          guests: true,
-          totalPrice: true,
-          status: true,
-          depositAmount: true,
-          paymentStatus: true,
-          paymentMethod: true,
-          paymentSlipUrl: true,
-          paymentReference: true,
-          paidAt: true,
-          createdAt: true,
-          updatedAt: true,
-          roomType: true,
-        },
-      });
+    const rows = await prisma.booking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        bookingCode: true,
+        lineUserId: true,
+        displayName: true,
+        pictureUrl: true,
+        phone: true,
+        note: true,
+        roomTypeId: true,
+        checkIn: true,
+        checkOut: true,
+        guests: true,
+        totalPrice: true,
+        status: true,
+        depositAmount: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        paymentSlipUrl: true,
+        paymentReference: true,
+        paidAt: true,
+        createdAt: true,
+        updatedAt: true,
+        roomType: true,
+      },
+    });
 
-      return rows.map((row) => ({ ...row, source: "gorilla" as const }));
-    } catch (secondError) {
-      console.error("LOAD_GORILLA_BOOKINGS_FALLBACK_ERROR:", secondError);
-      return [];
-    }
+    return rows.map((row) => ({ ...row, source: "gorilla" as const }));
   }
 }
 

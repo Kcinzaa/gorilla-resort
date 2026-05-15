@@ -248,13 +248,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let bookings: Awaited<ReturnType<typeof loadAdminBookings>> | [] = [];
-    try {
-      bookings = await loadAdminBookings();
-    } catch (loadError) {
-      console.error("LOAD_ADMIN_BOOKINGS_FATAL:", loadError);
-      bookings = [];
-    }
+    const bookings = await loadAdminBookings();
 
     const combinedBookings = [...bookings].sort((a, b) => {
       const aTime = new Date(a.createdAt || 0).getTime();
@@ -274,15 +268,14 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET ADMIN BOOKINGS ERROR:", error);
 
-    // Soft-fail: return empty list + warning so the dashboard renders.
+    const errMsg = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
       {
-        success: true,
-        data: [],
-        warning: "โหลดรายการจองไม่สำเร็จ ระบบจะลองอีกครั้ง",
-        error: error instanceof Error ? error.message : String(error),
+        success: false,
+        message: `โหลดรายการจองไม่สำเร็จ — ${errMsg}`,
       },
-      { status: 200 },
+      { status: 500 },
     );
   }
 }
