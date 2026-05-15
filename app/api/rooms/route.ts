@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -140,8 +141,25 @@ async function loadActiveRooms() {
     }
 
     console.error("LOAD_GORILLA_ROOMS_FALLBACK_USED", error);
+    return loadActiveRoomsViaSupabase();
+  }
+}
+
+async function loadActiveRoomsViaSupabase() {
+  const { data, error } = await getSupabaseAdmin()
+    .from("RoomType")
+    .select(
+      "id, name, description, pricePerNight, capacity, totalRooms, reservedRooms, imageUrl, isActive",
+    )
+    .eq("isActive", true)
+    .order("id", { ascending: true });
+
+  if (error) {
+    console.error("LOAD_GORILLA_ROOMS_SUPABASE_FALLBACK_FAILED", error);
     return FALLBACK_GORILLA_ROOMS;
   }
+
+  return (data || []) as RoomTypeRow[];
 }
 
 async function loadBookingsForDateRange(checkIn: Date, checkOut: Date) {
@@ -175,36 +193,70 @@ async function loadBookingsForDateRange(checkIn: Date, checkOut: Date) {
     })) as BookingRow[];
   } catch (error) {
     if (!isRoomCountColumnError(error)) {
-      throw error;
+      console.error("LOAD_GORILLA_BOOKINGS_PRISMA_FAILED", error);
+      return loadBookingsForDateRangeViaSupabase(checkIn, checkOut);
     }
 
-    return (await prisma.booking.findMany({
-      where: {
-        status: {
-          in: [
-            "PENDING",
-            "CONFIRMED",
-            "CHECKED_IN",
-            "WAITING_PAYMENT",
-            "WAITING_VERIFY",
-          ],
+    try {
+      return (await prisma.booking.findMany({
+        where: {
+          status: {
+            in: [
+              "PENDING",
+              "CONFIRMED",
+              "CHECKED_IN",
+              "WAITING_PAYMENT",
+              "WAITING_VERIFY",
+            ],
+          },
+          checkIn: {
+            lt: checkOut,
+          },
+          checkOut: {
+            gt: checkIn,
+          },
         },
-        checkIn: {
-          lt: checkOut,
+        select: {
+          id: true,
+          roomTypeId: true,
+          checkIn: true,
+          checkOut: true,
+          status: true,
         },
-        checkOut: {
-          gt: checkIn,
-        },
-      },
-      select: {
-        id: true,
-        roomTypeId: true,
-        checkIn: true,
-        checkOut: true,
-        status: true,
-      },
-    })) as BookingRow[];
+      })) as BookingRow[];
+    } catch (fallbackError) {
+      console.error("LOAD_GORILLA_BOOKINGS_ROOMCOUNT_PRISMA_FAILED", fallbackError);
+      return loadBookingsForDateRangeViaSupabase(checkIn, checkOut);
+    }
   }
+}
+
+async function loadBookingsForDateRangeViaSupabase(
+  checkIn: Date,
+  checkOut: Date,
+) {
+  const { data, error } = await getSupabaseAdmin()
+    .from("Booking")
+    .select("id, roomTypeId, checkIn, checkOut, status, roomCount")
+    .in("status", [
+      "PENDING",
+      "CONFIRMED",
+      "CHECKED_IN",
+      "WAITING_PAYMENT",
+      "WAITING_VERIFY",
+    ])
+    .lt("checkIn", checkOut.toISOString())
+    .gt("checkOut", checkIn.toISOString());
+
+  if (error) {
+    throw new Error(`Supabase Booking availability fallback failed: ${error.message}`);
+  }
+
+  return (data || []).map((booking) => ({
+    ...booking,
+    checkIn: new Date(booking.checkIn),
+    checkOut: new Date(booking.checkOut),
+  })) as BookingRow[];
 }
 
 function getBookedCountByRoomType(bookings: BookingRow[]) {

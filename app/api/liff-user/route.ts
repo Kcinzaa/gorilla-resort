@@ -1,5 +1,60 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getFriendlyDbErrorMessage, prisma } from "@/lib/prisma";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+type LiffUserPayload = {
+  lineUserId: string;
+  displayName?: string | null;
+  pictureUrl?: string | null;
+  phone?: string | null;
+};
+
+async function upsertLiffUserViaSupabase({
+  lineUserId,
+  displayName,
+  pictureUrl,
+  phone,
+}: LiffUserPayload) {
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("User")
+    .upsert(
+      {
+        lineUserId,
+        displayName,
+        pictureUrl,
+        phone,
+        updatedAt: now,
+      },
+      { onConflict: "lineUserId" },
+    )
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Supabase User upsert fallback failed: ${error.message}`);
+  }
+
+  return data;
+}
+
+async function getLiffUserViaSupabase(lineUserId: string) {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from("User")
+    .select("*, bookings:Booking(*, roomType:RoomType(*))")
+    .eq("lineUserId", lineUserId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Supabase User fallback failed: ${error.message}`);
+  }
+
+  return data;
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,22 +72,39 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.upsert({
-      where: {
+    let user;
+
+    try {
+      user = await prisma.user.upsert({
+        where: {
+          lineUserId,
+        },
+        update: {
+          displayName,
+          pictureUrl,
+          phone,
+        },
+        create: {
+          lineUserId,
+          displayName,
+          pictureUrl,
+          phone,
+        },
+      });
+    } catch (error) {
+      const { category } = getFriendlyDbErrorMessage(error);
+      if (category !== "unreachable") {
+        throw error;
+      }
+
+      console.error("SAVE_LIFF_USER_PRISMA_UNREACHABLE_FALLBACK:", error);
+      user = await upsertLiffUserViaSupabase({
         lineUserId,
-      },
-      update: {
         displayName,
         pictureUrl,
         phone,
-      },
-      create: {
-        lineUserId,
-        displayName,
-        pictureUrl,
-        phone,
-      },
-    });
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -68,21 +140,33 @@ export async function GET(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        lineUserId,
-      },
-      include: {
-        bookings: {
-          include: {
-            roomType: true,
-          },
-          orderBy: {
-            createdAt: "desc",
+    let user;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: {
+          lineUserId,
+        },
+        include: {
+          bookings: {
+            include: {
+              roomType: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      const { category } = getFriendlyDbErrorMessage(error);
+      if (category !== "unreachable") {
+        throw error;
+      }
+
+      console.error("GET_LIFF_USER_PRISMA_UNREACHABLE_FALLBACK:", error);
+      user = await getLiffUserViaSupabase(lineUserId);
+    }
 
     if (!user) {
       return NextResponse.json(

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getCentralRhinoBookedRoomCount } from "@/lib/centralAvailability";
 import { syncGorillaBookingToCentral } from "@/lib/centralBookingSync";
 import { triggerSheetsSync } from "@/lib/googleSheetsSync";
-import { prisma } from "@/lib/prisma";
+import { getFriendlyDbErrorMessage, prisma } from "@/lib/prisma";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getCentralSupabaseAdmin } from "@/lib/centralSupabaseAdmin";
 
 function cleanString(value: unknown) {
@@ -202,14 +203,21 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET BOOKINGS FATAL:", error);
 
-    const errMsg = error instanceof Error ? error.message : String(error);
+    const { userMessage, category } = getFriendlyDbErrorMessage(error);
+    const techDetail =
+      error instanceof Error ? error.message : String(error);
 
     return NextResponse.json(
       {
         success: false,
-        message: `ไม่สามารถโหลดรายการจองได้: ${errMsg}`,
+        message: userMessage,
+        errorCategory: category,
+        // ใส่ technical detail เฉพาะตอน dev เพื่อไม่ให้หลุดสู่ user จริง
+        ...(process.env.NODE_ENV !== "production"
+          ? { debug: techDetail }
+          : {}),
       },
-      { status: 500 },
+      { status: category === "unreachable" ? 503 : 500 },
     );
   }
 }
@@ -267,39 +275,75 @@ async function loadGorillaBookingsSafely(where: {
   } catch (firstError) {
     if (!isRoomCountColumnError(firstError)) {
       console.error("LOAD_GORILLA_BOOKINGS_PRIMARY_ERROR:", firstError);
+      return loadGorillaBookingsViaSupabase(where);
     }
 
-    const rows = await prisma.booking.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        bookingCode: true,
-        lineUserId: true,
-        displayName: true,
-        pictureUrl: true,
-        phone: true,
-        note: true,
-        roomTypeId: true,
-        checkIn: true,
-        checkOut: true,
-        guests: true,
-        totalPrice: true,
-        status: true,
-        depositAmount: true,
-        paymentStatus: true,
-        paymentMethod: true,
-        paymentSlipUrl: true,
-        paymentReference: true,
-        paidAt: true,
-        createdAt: true,
-        updatedAt: true,
-        roomType: true,
-      },
-    });
+    try {
+      const rows = await prisma.booking.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          bookingCode: true,
+          lineUserId: true,
+          displayName: true,
+          pictureUrl: true,
+          phone: true,
+          note: true,
+          roomTypeId: true,
+          checkIn: true,
+          checkOut: true,
+          guests: true,
+          totalPrice: true,
+          status: true,
+          depositAmount: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          paymentSlipUrl: true,
+          paymentReference: true,
+          paidAt: true,
+          createdAt: true,
+          updatedAt: true,
+          roomType: true,
+        },
+      });
 
-    return rows.map((row) => ({ ...row, source: "gorilla" as const }));
+      return rows.map((row) => ({ ...row, source: "gorilla" as const }));
+    } catch (fallbackError) {
+      console.error("LOAD_GORILLA_BOOKINGS_ROOMCOUNT_FALLBACK_ERROR:", fallbackError);
+      return loadGorillaBookingsViaSupabase(where);
+    }
   }
+}
+
+async function loadGorillaBookingsViaSupabase(where: {
+  lineUserId?: string;
+  bookingCode?: string;
+}): Promise<AnyBookingRecord[]> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase
+    .from("Booking")
+    .select("*, roomType:RoomType(*)")
+    .order("createdAt", { ascending: false });
+
+  if (where.lineUserId) {
+    query = query.eq("lineUserId", where.lineUserId);
+  }
+
+  if (where.bookingCode) {
+    query = query.eq("bookingCode", where.bookingCode);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Supabase Booking fallback failed: ${error.message}`);
+  }
+
+  return ((data || []) as AnyBookingRecord[]).map((row) => ({
+    ...row,
+    source: "gorilla" as const,
+  }));
 }
 
 type RhinoBookingRow = {
